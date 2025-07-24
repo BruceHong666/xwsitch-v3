@@ -1,16 +1,100 @@
 .main-container {
-    display: flex;
-    flex-direction: row;
     height: 100%;
+}
+
+.main-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+}
+
+.main-header {
+    background: #fff;
+    padding: 0 16px;
+    border-bottom: 1px solid #f0f0f0;
+    height: 48px;
+    line-height: 48px;
+}
+
+.main-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.main-sider {
+    background: #fff;
+}
+
+.main-sider-content {
+    padding: 8px 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.group-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    background: transparent;
+    border-left: 3px solid transparent;
+    border-bottom: none;
+}
+
+.group-item-selected {
+    background: #e6f7ff;
+    border-left: 3px solid #1890ff;
+}
+
+.group-item-content {
     width: 100%;
 }
 
-.left-container {
-    width: 200px;
-    background-color: red;
+.group-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
 }
 
-.right-container {
-    flex: 1;
-    background-color: blue;
+.group-name-text {
+    color: #333;
+    font-size: 13px;
+}
+
+.group-name-text-selected {
+    color: #1890ff;
+}
+
+.group-name-text-disabled {
+    color: #999;
+}
+
+.group-action-btn {
+    padding: 2px;
+}
+
+.main-content {
+    background: #fff;
+}
+
+.main-editor-container {
+    height: 100%;
+    padding: 16px;
+}
+
+.main-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #999;
+}
+
+.name-input {
+    width: 150px;
+}
+
+.edit-name-input {
+    width: 100px;
 }
