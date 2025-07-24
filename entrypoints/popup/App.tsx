@@ -2,7 +2,7 @@ import { message } from 'antd';
 import { useEffect, useState } from 'react';
 import { GroupRuleVo } from '../types';
 import { DEFAULT_RULE } from '../utils/const';
-import { storage } from '../utils/storage';
+import { compatStorage as storage } from '../../utils/storage';
 import './App.css';
 import { Rule } from './components/rule';
 
@@ -47,7 +47,10 @@ function App() {
           ruleText: DEFAULT_RULE,
         };
         setGroups([defaultGroup]);
-        await storage.saveGroups([defaultGroup]);
+        const saveResult = await storage.saveGroups([defaultGroup]);
+        if (!saveResult.success) {
+          console.error('Failed to save default group:', saveResult.message);
+        }
       } else {
         setGroups(savedGroups);
       }
@@ -67,14 +70,11 @@ function App() {
   const handleGroupsChange = async (
     newGroups: GroupRuleVo[]
   ): Promise<OperationResult> => {
-    try {
-      await storage.saveGroups(newGroups);
+    const result = await storage.saveGroups(newGroups);
+    if (result.success) {
       setGroups(newGroups);
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to save groups:', error);
-      return { success: false, message: '保存失败' };
     }
+    return result;
   };
 
   /**
@@ -83,14 +83,11 @@ function App() {
   const handleGlobalEnabledChange = async (
     enabled: boolean
   ): Promise<OperationResult> => {
-    try {
-      await storage.saveGlobalEnabled(enabled);
+    const result = await storage.saveGlobalEnabled(enabled);
+    if (result.success) {
       setGlobalEnabled(enabled);
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to save global enabled state:', error);
-      return { success: false, message: '保存失败' };
     }
+    return result;
   };
 
   const isInTab = window.location.href.includes('popup.html');

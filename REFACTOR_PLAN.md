@@ -48,7 +48,7 @@
 2.  **存储工具**:
     - **来源**: `xswitch/src/utils/storage.ts`
     - **目标**: `xswitch-v3/utils/storage.ts` (需新建目录)
-    - **任务**: 迁移封装了 `chrome.storage` 的工具函数。WXT 提供了 `wxt/storage`，可以考虑使用官方库进行重写，以获得更好的类型支持和 API。
+    - **任务**: WXT 提供了 `wxt/storage`，可以考虑使用官方库进行重写，以获得更好的类型支持和 API。
 
 3.  **背景逻辑 (Background Script)**:
     - **来源**: `xswitch/src/background/index.ts`
