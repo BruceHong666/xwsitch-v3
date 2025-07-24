@@ -8,15 +8,15 @@ const GLOBAL_ENABLED_KEY = 'xswitch_global_enabled';
  */
 const getStorageAPI = () => {
   // 优先使用 browser API (WXT框架)
-  if (typeof browser !== 'undefined' && browser.storage) {
+  if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
     return browser.storage;
   }
   // 兼容 chrome API
-  if (typeof chrome !== 'undefined' && chrome.storage) {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     return chrome.storage;
   }
-  // 如果都不可用，抛出错误
-  throw new Error('Extension storage API not available');
+  // 如果都不可用，返回null
+  return null;
 };
 
 /**

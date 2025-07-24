@@ -23,7 +23,7 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 import { GroupRuleVo } from '../../../types';
-import { DEFAULT_RULE } from '../../../utils/const';
+import { DEFAULT_NEW_RULE } from '../../../utils/const';
 import { validateJsonFormat } from '../../../utils/json';
 import CodeMirrorEditor from '../code-mirror-editor';
 import './index.css';
@@ -54,7 +54,12 @@ interface RuleProps {
 /**
  * 规则管理组件 - 纯组件，不处理数据持久化
  */
-export function Rule({ value: groups, onChange, enabled: globalEnabled, onChangeEnabled }: RuleProps) {
+export function Rule({
+  value: groups,
+  onChange,
+  enabled: globalEnabled,
+  onChangeEnabled,
+}: RuleProps) {
   // 当前选中的规则组ID
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   // 编辑器当前值
@@ -109,7 +114,7 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
       const updatedGroups = groups.map(g =>
         g.id === selectedGroupId ? { ...g, ruleText: editorValue } : g
       );
-      
+
       const result = await onChange(updatedGroups);
       if (result.success) {
         message.success(result.message || '规则配置保存成功！');
@@ -131,17 +136,17 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
       message.warning('请输入规则组名称');
       return;
     }
-    
+
     try {
       setLoading(true);
       const newGroup: GroupRuleVo = {
         id: Date.now().toString(),
         name: newGroupName.trim(),
         enabled: true,
-        ruleText: DEFAULT_RULE,
+        ruleText: DEFAULT_NEW_RULE,
       };
       const updatedGroups = [...groups, newGroup];
-      
+
       const result = await onChange(updatedGroups);
       if (result.success) {
         setNewGroupName('');
@@ -175,7 +180,7 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
         try {
           setLoading(true);
           const updatedGroups = groups.filter(g => g.id !== groupId);
-          
+
           const result = await onChange(updatedGroups);
           if (result.success) {
             if (selectedGroupId === groupId) {
@@ -207,7 +212,7 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
         ruleText: group.ruleText,
       };
       const updatedGroups = [...groups, newGroup];
-      
+
       const result = await onChange(updatedGroups);
       if (result.success) {
         message.success(result.message || '规则组复制成功！');
@@ -237,13 +242,13 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
       message.warning('规则组名称不能为空');
       return;
     }
-    
+
     try {
       setLoading(true);
       const updatedGroups = groups.map(g =>
         g.id === groupId ? { ...g, name: editingGroupName.trim() } : g
       );
-      
+
       const result = await onChange(updatedGroups);
       if (result.success) {
         setEditingGroupId('');
@@ -268,7 +273,7 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
       const updatedGroups = groups.map(g =>
         g.id === groupId ? { ...g, enabled: !g.enabled } : g
       );
-      
+
       const result = await onChange(updatedGroups);
       if (!result.success) {
         message.error(result.message || '操作失败');
@@ -343,7 +348,11 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
         browser.tabs.create({
           url: browser.runtime.getURL('popup.html'),
         });
-      } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.runtime) {
+      } else if (
+        typeof chrome !== 'undefined' &&
+        chrome.tabs &&
+        chrome.runtime
+      ) {
         chrome.tabs.create({
           url: chrome.runtime.getURL('popup.html'),
         });
@@ -468,7 +477,10 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
                               status="processing"
                             >
                               {jsonErrors[group.id] ? (
-                                <Tooltip title={`JSON格式错误: ${jsonErrors[group.id]}`} color="red">
+                                <Tooltip
+                                  title={`JSON格式错误: ${jsonErrors[group.id]}`}
+                                  color="red"
+                                >
                                   <Text
                                     strong={isSelected}
                                     className={`group-name-text ${isSelected ? 'group-name-text-selected' : ''} ${!group.enabled ? 'group-name-text-disabled' : ''}`}
@@ -538,24 +550,33 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
         </Sider>
 
         <Content className="main-content">
-          <div style={{ 
-            padding: '8px 16px', 
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          <div
+            style={{
+              padding: '8px 16px',
+              borderBottom: '1px solid #f0f0f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Text type="secondary">{selectedGroup?.name ?? '未选择规则组'}</Text>
+              <Text type="secondary">
+                {selectedGroup?.name ?? '未选择规则组'}
+              </Text>
               {selectedGroup && jsonErrors[selectedGroup.id] && (
-                <Tooltip title={`JSON格式错误: ${jsonErrors[selectedGroup.id]}`} color="red">
-                  <Text style={{ color: '#ff4d4f', fontSize: '12px' }}>⚠ 格式错误</Text>
+                <Tooltip
+                  title={`JSON格式错误: ${jsonErrors[selectedGroup.id]}`}
+                  color="red"
+                >
+                  <Text style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                    ⚠ 格式错误
+                  </Text>
                 </Tooltip>
               )}
             </div>
-            <Button 
-              type="primary" 
-              size="small" 
+            <Button
+              type="primary"
+              size="small"
               onClick={handleSaveConfig}
               disabled={!isChanged || loading}
               loading={loading}
@@ -563,10 +584,12 @@ export function Rule({ value: groups, onChange, enabled: globalEnabled, onChange
               保存
             </Button>
           </div>
-          <div style={{ 
-            height: isInTab ? 'calc(100vh - 97px)' : 'calc(100% - 49px)', 
-            padding: '16px' 
-          }}>
+          <div
+            style={{
+              height: isInTab ? 'calc(100vh - 97px)' : 'calc(100% - 49px)',
+              padding: '16px',
+            }}
+          >
             {selectedGroup ? (
               <CodeMirrorEditor value={editorValue} onChange={setEditorValue} />
             ) : (
