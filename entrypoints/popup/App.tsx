@@ -3,12 +3,10 @@ import { Main } from './components/main';
 
 function App() {
   const isInTab = window.location.href.includes('popup.html');
-  const containerStyle = isInTab 
-    ? { minHeight: '100vh', width: '100vw' }
-    : { width: '800px', height: '600px' };
+  const containerClass = isInTab ? 'popup-container-tab' : 'popup-container';
 
   return (
-    <div className='popup-container' style={containerStyle}>
+    <div className={containerClass}>
       <Main />
     </div>
   );

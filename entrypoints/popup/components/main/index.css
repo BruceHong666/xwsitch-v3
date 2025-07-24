@@ -1,12 +1,13 @@
 .main-container {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .main-loading {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 400px;
 }
 
 .main-header {
@@ -15,6 +16,9 @@
     border-bottom: 1px solid #f0f0f0;
     height: 48px;
     line-height: 48px;
+}
+.main-layout{
+    flex: 1;
 }
 
 .main-header-content {
@@ -34,11 +38,13 @@
 }
 
 .group-item {
-    padding: 8px 16px;
     cursor: pointer;
     background: transparent;
     border-left: 3px solid transparent;
     border-bottom: none;
+}
+.group-item.ant-list-item{
+    padding: 4px 8px;
 }
 
 .group-item-selected {
@@ -48,8 +54,26 @@
 
 .group-item-content {
     width: 100%;
+    position: relative;
 }
 
+
+.group-item-action{
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: row;
+    gap: 2px;
+    display: none;
+}
+.group-item-content:hover .group-item-action{
+    display: flex;
+    visibility: visible;
+}
+.group-item-action .ant-btn{
+    background-color: #fff;
+}
 .group-item-row {
     display: flex;
     justify-content: space-between;

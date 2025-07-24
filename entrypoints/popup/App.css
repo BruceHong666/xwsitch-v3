@@ -1,5 +1,9 @@
-.popup-container{
+.popup-container {
   width: 800px;
   height: 600px;
-  background-color: red;
+}
+
+.popup-container-tab {
+  min-height: 100vh;
+  width: 100vw;
 }

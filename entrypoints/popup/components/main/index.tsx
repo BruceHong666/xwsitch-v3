@@ -227,183 +227,173 @@ export function Main() {
     const isInTab = window.location.href.includes('popup.html');
 
     return (
-        <div className='main-container'>
-            <Layout style={{ height: '100%' }}>
-                <Header className='main-header'>
-                    <div className='main-header-content'>
-                        <Space.Compact size="small">
-                            <Input
-                                placeholder="输入规则组名称"
-                                value={newGroupName}
-                                onChange={(e) => setNewGroupName(e.target.value)}
-                                onPressEnter={handleCreateGroup}
-                                size="small"
-                                className="name-input"
+        <div className='main-container' style={{ height: isInTab ? '100vh' : '600px' }}>
+            <Header className='main-header'>
+                <div className='main-header-content'>
+                    <Space.Compact size="small">
+                        <Input
+                            placeholder="输入规则组名称"
+                            value={newGroupName}
+                            onChange={(e) => setNewGroupName(e.target.value)}
+                            onPressEnter={handleCreateGroup}
+                            size="small"
+                            className="name-input"
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={handleCreateGroup}
+                            size="small"
+                            disabled={!newGroupName.trim()}
+                        />
+                    </Space.Compact>
+
+                    <Space size="small">
+                        <Tooltip title={`代理全局开关 - ${globalEnabled ? '已启用' : '已禁用'}`}>
+                            <Switch
+                                onChange={handleGlobalEnabledChange}
+                                checked={globalEnabled}
                             />
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={handleCreateGroup}
-                                size="small"
-                                disabled={!newGroupName.trim()}
-                            />
-                        </Space.Compact>
+                        </Tooltip>
 
-                        <Space size="small">
-                            <Tooltip title={`代理全局开关 - ${globalEnabled ? '已启用' : '已禁用'}`}>
-                                <Switch
-                                    onChange={handleGlobalEnabledChange}
-                                    checked={globalEnabled}
-                                />
-                            </Tooltip>
-
-                            <Tooltip title="GitHub README">
-                                <Button
-                                    type="text"
-                                    icon={<QuestionCircleOutlined />}
-                                    onClick={openGitHubReadme}
-                                    size="small"
-                                />
-                            </Tooltip>
-
-                            <Tooltip title="打开控制台">
-                                <Button
-                                    type="text"
-                                    icon={<CodeOutlined />}
-                                    onClick={openConsole}
-                                    size="small"
-                                />
-                            </Tooltip>
-
+                        <Tooltip title="GitHub README">
                             <Button
                                 type="text"
-                                icon={<SettingOutlined />}
-                                onClick={openOptionsPage}
+                                icon={<QuestionCircleOutlined />}
+                                onClick={openGitHubReadme}
                                 size="small"
-                                title="设置"
                             />
-                        </Space>
-                    </div>
-                </Header>
+                        </Tooltip>
 
-                <Layout>
-                    <Sider width={200} className='main-sider'>
-                        <div className='main-sider-content'>
-                            <List
+                        <Tooltip title="打开控制台">
+                            <Button
+                                type="text"
+                                icon={<CodeOutlined />}
+                                onClick={openConsole}
                                 size="small"
-                                dataSource={groups}
-                                renderItem={(group: GroupRuleVo) => {
-                                    const isSelected = group.id === selectedGroupId;
-                                    const isEditing = editingGroupId === group.id;
+                            />
+                        </Tooltip>
 
-                                    return (
-                                        <List.Item
-                                            className={`group-item ${isSelected ? 'group-item-selected' : ''}`}
-                                            onClick={() => !isEditing && setSelectedGroupId(group.id)}
-                                        >
-                                            <div className="group-item-content">
-                                                <div className="group-item-row">
-                                                    <Space size="small">
-                                                        <Checkbox
-                                                            checked={group.enabled}
-                                                            onChange={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleGroupEnabled(group.id);
-                                                            }}
+                        <Button
+                            type="text"
+                            icon={<SettingOutlined />}
+                            onClick={openOptionsPage}
+                            size="small"
+                            title="设置"
+                        />
+                    </Space>
+                </div>
+            </Header>
+
+            <Layout className='main-layout'>
+                <Sider width={200} className='main-sider'>
+                    <div className='main-sider-content'>
+                        <List
+                            size="small"
+                            dataSource={groups}
+                            renderItem={(group: GroupRuleVo) => {
+                                const isSelected = group.id === selectedGroupId;
+                                const isEditing = editingGroupId === group.id;
+
+                                return (
+                                    <List.Item
+                                        className={`group-item ${isSelected ? 'group-item-selected' : ''}`}
+                                        onClick={() => !isEditing && setSelectedGroupId(group.id)}
+                                    >
+                                        <div className="group-item-content">
+                                            <div className="group-item-row">
+                                                <Space size="small">
+                                                    <Checkbox
+                                                        checked={group.enabled}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleGroupEnabled(group.id);
+                                                        }}
+                                                    />
+
+                                                    {isEditing ? (
+                                                        <Input
+                                                            size="small"
+                                                            value={editingGroupName}
+                                                            onChange={(e) => setEditingGroupName(e.target.value)}
+                                                            onPressEnter={() => handleSaveGroupName(group.id)}
+                                                            onBlur={() => handleSaveGroupName(group.id)}
+                                                            autoFocus
+                                                            className="edit-name-input"
+                                                            style={{width:'100%'}}
                                                         />
+                                                    ) : (
+                                                        <Badge dot={isChanged && isSelected} status="processing">
+                                                            <Text
+                                                                strong={isSelected}
+                                                                className={`group-name-text ${isSelected ? 'group-name-text-selected' : ''} ${!group.enabled ? 'group-name-text-disabled' : ''}`}
+                                                            >
+                                                                {group.name}
+                                                            </Text>
+                                                        </Badge>
+                                                    )}
+                                                </Space>
 
-                                                        {isEditing ? (
-                                                            <Input
-                                                                size="small"
-                                                                value={editingGroupName}
-                                                                onChange={(e) => setEditingGroupName(e.target.value)}
-                                                                onPressEnter={() => handleSaveGroupName(group.id)}
-                                                                onBlur={() => handleSaveGroupName(group.id)}
-                                                                autoFocus
-                                                                className="edit-name-input"
-                                                            />
-                                                        ) : (
-                                                            <Badge dot={isChanged && isSelected} status="processing">
-                                                                <Text
-                                                                    strong={isSelected}
-                                                                    className={`group-name-text ${isSelected ? 'group-name-text-selected' : ''} ${!group.enabled ? 'group-name-text-disabled' : ''}`}
-                                                                >
-                                                                    {group.name}
-                                                                </Text>
-                                                            </Badge>
-                                                        )}
-                                                    </Space>
+                                                {!isEditing && <Space size="small" className='group-item-action'>
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        icon={<EditOutlined />}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditGroupName(group.id, group.name);
+                                                        }}
+                                                        className="group-action-btn"
+                                                    />
 
-                                                    <Space size="small">
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        icon={<CopyOutlined />}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCopyGroup(group);
+                                                        }}
+                                                        className="group-action-btn"
+                                                    />
+
+                                                    {groups.length > 1 && (
                                                         <Button
                                                             type="text"
                                                             size="small"
-                                                            icon={<EditOutlined />}
+                                                            danger
+                                                            icon={<DeleteOutlined />}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                handleEditGroupName(group.id, group.name);
+                                                                handleDeleteGroup(group.id, group.name);
                                                             }}
-                                                            style={{ padding: '2px' }}
+                                                            className="group-action-btn"
                                                         />
-
-                                                        <Button
-                                                            type="text"
-                                                            size="small"
-                                                            icon={<CopyOutlined />}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCopyGroup(group);
-                                                            }}
-                                                            style={{ padding: '2px' }}
-                                                        />
-
-                                                        {groups.length > 1 && (
-                                                            <Button
-                                                                type="text"
-                                                                size="small"
-                                                                danger
-                                                                icon={<DeleteOutlined />}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDeleteGroup(group.id, group.name);
-                                                                }}
-                                                                style={{ padding: '2px' }}
-                                                            />
-                                                        )}
-                                                    </Space>
-                                                </div>
+                                                    )}
+                                                </Space>}
                                             </div>
-                                        </List.Item>
-                                    );
-                                }}
-                            />
-                        </div>
-                    </Sider>
+                                        </div>
+                                    </List.Item>
+                                );
+                            }}
+                        />
+                    </div>
+                </Sider>
 
-                    <Content style={{ background: '#fff' }}>
-                        <div style={{
-                            height: '100vh',
-                            padding: '16px'
-                        }}>
-                            {selectedGroup ? (
-                                <CodeMirrorEditor
-                                    value={editorValue}
-                                    onChange={setEditorValue}
-                                />
-                            ) : (
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    height: '100%',
-                                    color: '#999'
-                                }}>
-                                    <div>请从左侧选择一个规则组来编辑规则</div>
-                                </div>
-                            )}
-                        </div>
-                    </Content>
-                </Layout>
+                <Content className="main-content">
+                    <div className="main-editor-container">
+                        {selectedGroup ? (
+                            <CodeMirrorEditor
+                                value={editorValue}
+                                onChange={setEditorValue}
+                            />
+                        ) : (
+                            <div className="main-placeholder">
+                                <div>请从左侧选择一个规则组来编辑规则</div>
+                            </div>
+                        )}
+                    </div>
+                </Content>
             </Layout>
         </div>
     );
