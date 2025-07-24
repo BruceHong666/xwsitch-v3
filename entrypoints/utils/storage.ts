@@ -3,43 +3,111 @@ import { GroupRuleVo } from '../types';
 const STORAGE_KEY = 'xswitch_groups';
 const GLOBAL_ENABLED_KEY = 'xswitch_global_enabled';
 
-// WXT 最佳实践: 使用 storage API
+/**
+ * 获取可用的存储API
+ */
+const getStorageAPI = () => {
+  // 优先使用 browser API (WXT框架)
+  if (typeof browser !== 'undefined' && browser.storage) {
+    return browser.storage;
+  }
+  // 兼容 chrome API
+  if (typeof chrome !== 'undefined' && chrome.storage) {
+    return chrome.storage;
+  }
+  // 如果都不可用，抛出错误
+  throw new Error('Extension storage API not available');
+};
+
+/**
+ * 使用localStorage作为后备方案
+ */
+const fallbackStorage = {
+  async set(data: Record<string, any>): Promise<void> {
+    for (const [key, value] of Object.entries(data)) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  },
+  
+  async get(keys: string[]): Promise<Record<string, any>> {
+    const result: Record<string, any> = {};
+    for (const key of keys) {
+      const item = localStorage.getItem(key);
+      if (item) {
+        try {
+          result[key] = JSON.parse(item);
+        } catch {
+          result[key] = item;
+        }
+      }
+    }
+    return result;
+  }
+};
+
+// WXT 最佳实践: 使用 storage API 并提供兼容性
 export const storage = {
   async saveGroups(groups: GroupRuleVo[]): Promise<void> {
     try {
-      await browser.storage.local.set({ [STORAGE_KEY]: groups });
+      const storageAPI = getStorageAPI();
+      await storageAPI.local.set({ [STORAGE_KEY]: groups });
     } catch (error) {
-      console.error('Failed to save groups:', error);
-      throw error;
+      console.warn('Extension storage not available, using localStorage:', error);
+      try {
+        await fallbackStorage.set({ [STORAGE_KEY]: groups });
+      } catch (fallbackError) {
+        console.error('Failed to save groups:', fallbackError);
+        throw fallbackError;
+      }
     }
   },
 
   async loadGroups(): Promise<GroupRuleVo[]> {
     try {
-      const result = await browser.storage.local.get([STORAGE_KEY]);
+      const storageAPI = getStorageAPI();
+      const result = await storageAPI.local.get([STORAGE_KEY]);
       return result[STORAGE_KEY] || [];
     } catch (error) {
-      console.error('Failed to load groups:', error);
-      return [];
+      console.warn('Extension storage not available, using localStorage:', error);
+      try {
+        const result = await fallbackStorage.get([STORAGE_KEY]);
+        return result[STORAGE_KEY] || [];
+      } catch (fallbackError) {
+        console.error('Failed to load groups:', fallbackError);
+        return [];
+      }
     }
   },
 
   async saveGlobalEnabled(enabled: boolean): Promise<void> {
     try {
-      await browser.storage.local.set({ [GLOBAL_ENABLED_KEY]: enabled });
+      const storageAPI = getStorageAPI();
+      await storageAPI.local.set({ [GLOBAL_ENABLED_KEY]: enabled });
     } catch (error) {
-      console.error('Failed to save global enabled state:', error);
-      throw error;
+      console.warn('Extension storage not available, using localStorage:', error);
+      try {
+        await fallbackStorage.set({ [GLOBAL_ENABLED_KEY]: enabled });
+      } catch (fallbackError) {
+        console.error('Failed to save global enabled state:', fallbackError);
+        throw fallbackError;
+      }
     }
   },
 
   async loadGlobalEnabled(): Promise<boolean> {
     try {
-      const result = await browser.storage.local.get([GLOBAL_ENABLED_KEY]);
+      const storageAPI = getStorageAPI();
+      const result = await storageAPI.local.get([GLOBAL_ENABLED_KEY]);
       return result[GLOBAL_ENABLED_KEY] ?? true;
     } catch (error) {
-      console.error('Failed to load global enabled state:', error);
-      return true;
+      console.warn('Extension storage not available, using localStorage:', error);
+      try {
+        const result = await fallbackStorage.get([GLOBAL_ENABLED_KEY]);
+        return result[GLOBAL_ENABLED_KEY] ?? true;
+      } catch (fallbackError) {
+        console.error('Failed to load global enabled state:', fallbackError);
+        return true;
+      }
     }
   },
 
@@ -74,10 +142,15 @@ export const storage = {
 
   // 监听存储变化
   onStorageChanged(callback: (changes: any) => void): void {
-    browser.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'local') {
-        callback(changes);
-      }
-    });
+    try {
+      const storageAPI = getStorageAPI();
+      storageAPI.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local') {
+          callback(changes);
+        }
+      });
+    } catch (error) {
+      console.warn('Storage change listener not available:', error);
+    }
   },
 };
