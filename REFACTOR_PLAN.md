@@ -19,19 +19,19 @@
 我们将确保以下核心功能在 `xswitch-v3` 中得到完整实现：
 
 - [ ] **规则管理**：
-    - [ ] 创建、编辑、删除规则组和规则。
-    - [ ] 规则的启用/禁用状态切换。
+  - [ ] 创建、编辑、删除规则组和规则。
+  - [ ] 规则的启用/禁用状态切换。
 - [ ] **请求转发/拦截**：
-    - [ ] 基于规则匹配，对网络请求进行重定向或修改。
-    - [ ] 支持 `declarativeNetRequest` API。
+  - [ ] 基于规则匹配，对网络请求进行重定向或修改。
+  - [ ] 支持 `declarativeNetRequest` API。
 - [ ] **CORS 处理**：自动处理跨域请求问题。
 - [ ] **缓存控制**：提供禁用缓存的选项。
 - [ ] **Popup 界面**：
-    - [ ] 快速切换规则启用状态。
-    - [ ] 显示当前激活的规则。
+  - [ ] 快速切换规则启用状态。
+  - [ ] 显示当前激活的规则。
 - [ ] **Options 页面**：
-    - [ ] 完整的规则配置界面。
-    - [ ] 使用 CodeMirror 或类似编辑器进行规则编辑。
+  - [ ] 完整的规则配置界面。
+  - [ ] 使用 CodeMirror 或类似编辑器进行规则编辑。
 - [ ] **图标状态**：根据插件的启用状态切换浏览器图标。
 
 ## 4. 重构阶段规划
@@ -54,9 +54,9 @@
     - **来源**: `xswitch/src/background/index.ts`
     - **目标**: `xswitch-v3/entrypoints/background.ts`
     - **任务**:
-        - 迁移请求拦截的核心逻辑。
-        - 迁移规则匹配算法。
-        - 迁移图标状态管理逻辑 (`iconManager.ts`)。
+      - 迁移请求拦截的核心逻辑。
+      - 迁移规则匹配算法。
+      - 迁移图标状态管理逻辑 (`iconManager.ts`)。
 
 ### Phase 2: Popup 界面迁移
 
@@ -64,9 +64,9 @@
     - **来源**: `xswitch/src/popup/Popup.tsx`
     - **目标**: `xswitch-v3/entrypoints/popup/App.tsx`
     - **任务**:
-        - 迁移 Popup 的基本布局和样式。
-        - 迁移 `RuleList.tsx` 组件，用于展示和切换规则。
-        - 对接 `Phase 1` 中迁移的存储和背景逻辑。
+      - 迁移 Popup 的基本布局和样式。
+      - 迁移 `RuleList.tsx` 组件，用于展示和切换规则。
+      - 对接 `Phase 1` 中迁移的存储和背景逻辑。
 
 2.  **静态资源**:
     - **来源**: `xswitch/public/icons/`
@@ -84,9 +84,9 @@ WXT 需要为 Options 页创建一个新的入口点。
     - **来源**: `xswitch/src/options/Options.tsx`
     - **目标**: `xswitch-v3/entrypoints/options.tsx`
     - **任务**:
-        - 迁移 Options 页面的整体布局。
-        - 重点迁移和适配 `CodeMirrorEditor.tsx` 组件。
-        - 对接完整的规则增删改查逻辑。
+      - 迁移 Options 页面的整体布局。
+      - 重点迁移和适配 `CodeMirrorEditor.tsx` 组件。
+      - 对接完整的规则增删改查逻辑。
 
 ### Phase 4: 国际化 (i18n) 和其他功能
 
@@ -103,11 +103,11 @@ WXT 需要为 Options 页创建一个新的入口点。
 
 以下是从 `xswitch` 挑选出的、价值最高且相对独立的代码，建议作为迁移的起点：
 
--   `xswitch/src/types/index.ts`: **(最优先)** 定义了整个应用的数据模型。
--   `xswitch/src/utils/storage.ts`: 封装了浏览器存储，是数据持久化的关键。
--   `xswitch/src/utils/iconManager.ts`: 管理插件图标状态，逻辑独立。
--   `xswitch/src/components/RuleList.tsx`: 核心的规则列表组件，可在 Popup 和 Options 页面复用。
--   `xswitch/src/components/CodeMirrorEditor.tsx`: 提供了强大的规则编辑功能。
+- `xswitch/src/types/index.ts`: **(最优先)** 定义了整个应用的数据模型。
+- `xswitch/src/utils/storage.ts`: 封装了浏览器存储，是数据持久化的关键。
+- `xswitch/src/utils/iconManager.ts`: 管理插件图标状态，逻辑独立。
+- `xswitch/src/components/RuleList.tsx`: 核心的规则列表组件，可在 Popup 和 Options 页面复用。
+- `xswitch/src/components/CodeMirrorEditor.tsx`: 提供了强大的规则编辑功能。
 
 ---
 

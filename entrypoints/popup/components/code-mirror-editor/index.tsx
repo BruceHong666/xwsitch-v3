@@ -1,30 +1,28 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { EditorView } from 'codemirror';
-import { EditorState } from '@codemirror/state';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { ViewUpdate } from '@codemirror/view';
-import { 
-  foldGutter, 
-  indentOnInput, 
-  bracketMatching, 
-  foldKeymap,
-  foldAll,
-  unfoldAll,
-  syntaxHighlighting,
-  defaultHighlightStyle
-} from '@codemirror/language';
-import { 
-  toggleComment,
-  toggleBlockComment,
+import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
+import {
   defaultKeymap,
   history,
-  historyKeymap
+  historyKeymap,
+  toggleBlockComment,
+  toggleComment,
 } from '@codemirror/commands';
-import { keymap } from '@codemirror/view';
+import { javascript } from '@codemirror/lang-javascript';
+import {
+  bracketMatching,
+  defaultHighlightStyle,
+  foldAll,
+  foldGutter,
+  foldKeymap,
+  indentOnInput,
+  syntaxHighlighting,
+  unfoldAll,
+} from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
-import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
-import { lineNumbers } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { keymap, lineNumbers, ViewUpdate } from '@codemirror/view';
+import { EditorView } from 'codemirror';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -41,7 +39,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   onFocus,
   onBlur,
   height = '100%',
-  theme = 'light'
+  theme = 'light',
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | null>(null);
@@ -59,12 +57,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       bracketMatching(),
       autocompletion(),
       syntaxHighlighting(defaultHighlightStyle),
-      
+
       // 使用JavaScript语言模式来支持JSON注释
       javascript({
-        typescript: false
+        typescript: false,
       }),
-      
+
       // 键盘映射
       keymap.of([
         ...defaultKeymap,
@@ -76,33 +74,37 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         {
           key: 'Ctrl-/',
           mac: 'Cmd-/',
-          run: toggleComment
+          run: toggleComment,
         },
         {
           key: 'Ctrl-Shift-/',
           mac: 'Cmd-Shift-/',
-          run: toggleBlockComment
+          run: toggleBlockComment,
         },
         {
           key: 'Ctrl-Shift-f',
           mac: 'Cmd-Shift-f',
-          run: (view) => {
+          run: view => {
             // 格式化JSON（支持注释）
             try {
               const text = view.state.doc.toString();
-              
+
               // 尝试移除注释后格式化
               const withoutComments = text
                 .replace(/\/\*[\s\S]*?\*\//g, '') // 移除多行注释
-                .replace(/\/\/.*$/gm, '');         // 移除单行注释
-              
-              const formatted = JSON.stringify(JSON.parse(withoutComments), null, 2);
+                .replace(/\/\/.*$/gm, ''); // 移除单行注释
+
+              const formatted = JSON.stringify(
+                JSON.parse(withoutComments),
+                null,
+                2
+              );
               view.dispatch({
                 changes: {
                   from: 0,
                   to: view.state.doc.length,
-                  insert: formatted
-                }
+                  insert: formatted,
+                },
               });
               return true;
             } catch (e) {
@@ -110,26 +112,26 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
               console.warn('Cannot format: Invalid JSON syntax');
               return false;
             }
-          }
+          },
         },
         {
           key: 'Ctrl-Shift-[',
           mac: 'Cmd-Shift-[',
-          run: (view) => {
+          run: view => {
             foldAll(view);
             return true;
-          }
+          },
         },
         {
           key: 'Ctrl-Shift-]',
           mac: 'Cmd-Shift-]',
-          run: (view) => {
+          run: view => {
             unfoldAll(view);
             return true;
-          }
-        }
+          },
+        },
       ]),
-      
+
       // 更新监听器
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
@@ -137,7 +139,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           onChange(newValue);
         }
       }),
-      
+
       // 焦点变化监听器
       EditorView.focusChangeEffect.of((_, focusing: boolean) => {
         if (focusing && onFocus) {
@@ -147,39 +149,39 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         }
         return null;
       }),
-      
+
       // 主题样式
       EditorView.theme({
         '&': {
           height: height,
-          fontSize: '14px'
+          fontSize: '14px',
         },
         '.cm-content': {
           padding: '12px',
           fontFamily: 'Monaco, "SF Mono", Consolas, monospace',
-          minHeight: '100%'
+          minHeight: '100%',
         },
         '.cm-editor': {
-          height: '100%'
+          height: '100%',
         },
         '.cm-scroller': {
-          height: '100%'
+          height: '100%',
         },
         '.cm-focused': {
-          outline: 'none'
+          outline: 'none',
         },
         '.cm-foldGutter': {
-          width: '16px'
+          width: '16px',
         },
         '.cm-lineNumbers': {
           minWidth: '40px',
-          color: '#999'
+          color: '#999',
         },
         '.cm-gutters': {
           backgroundColor: '#f8f8f8',
-          border: 'none'
-        }
-      })
+          border: 'none',
+        },
+      }),
     ];
 
     // 添加主题
@@ -189,12 +191,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
     const state = EditorState.create({
       doc: value,
-      extensions
+      extensions,
     });
 
     const view = new EditorView({
       state,
-      parent: editorRef.current
+      parent: editorRef.current,
     });
 
     editorViewRef.current = view;
@@ -216,8 +218,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           changes: {
             from: 0,
             to: editorViewRef.current.state.doc.length,
-            insert: value
-          }
+            insert: value,
+          },
         });
         editorViewRef.current.dispatch(transaction);
       }
@@ -233,7 +235,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         border: '1px solid #d9d9d9',
         borderRadius: '6px',
         overflow: 'hidden',
-        backgroundColor: theme === 'dark' ? '#282c34' : '#ffffff'
+        backgroundColor: theme === 'dark' ? '#282c34' : '#ffffff',
       }}
     />
   );

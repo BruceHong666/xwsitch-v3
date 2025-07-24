@@ -46,11 +46,15 @@ export const storage = {
   async exportData(): Promise<string> {
     const groups = await this.loadGroups();
     const globalEnabled = await this.loadGlobalEnabled();
-    return JSON.stringify({
-      groups,
-      globalEnabled,
-      exportedAt: new Date().toISOString(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        groups,
+        globalEnabled,
+        exportedAt: new Date().toISOString(),
+      },
+      null,
+      2
+    );
   },
 
   async importData(jsonData: string): Promise<void> {
@@ -75,5 +79,5 @@ export const storage = {
         callback(changes);
       }
     });
-  }
+  },
 };

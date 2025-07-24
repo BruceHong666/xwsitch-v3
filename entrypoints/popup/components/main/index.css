@@ -1,124 +1,123 @@
 .main-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .main-header {
-    background: #fff;
-    padding: 0 16px;
-    border-bottom: 1px solid #f0f0f0;
-    height: 48px;
-    line-height: 48px;
+  background: #fff;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+  height: 48px;
+  line-height: 48px;
 }
-.main-layout{
-    flex: 1;
+.main-layout {
+  flex: 1;
 }
 
 .main-header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .main-sider {
-    background: #fff;
+  background: #fff;
 }
 
 .main-sider-content {
-    padding: 8px 0;
-    height: 100%;
-    overflow-y: auto;
+  padding: 8px 0;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .group-item {
-    cursor: pointer;
-    background: transparent;
-    border-left: 3px solid transparent;
-    border-bottom: none;
+  cursor: pointer;
+  background: transparent;
+  border-left: 3px solid transparent;
+  border-bottom: none;
 }
-.group-item.ant-list-item{
-    padding: 4px 8px;
+.group-item.ant-list-item {
+  padding: 4px 8px;
 }
 
 .group-item-selected {
-    background: #e6f7ff;
-    border-left: 3px solid #1890ff;
+  background: #e6f7ff;
+  border-left: 3px solid #1890ff;
 }
 
 .group-item-content {
-    width: 100%;
-    position: relative;
+  width: 100%;
+  position: relative;
 }
 
-
-.group-item-action{
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    flex-direction: row;
-    gap: 2px;
-    display: none;
+.group-item-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  flex-direction: row;
+  gap: 2px;
+  display: none;
 }
-.group-item-content:hover .group-item-action{
-    display: flex;
-    visibility: visible;
+.group-item-content:hover .group-item-action {
+  display: flex;
+  visibility: visible;
 }
-.group-item-action .ant-btn{
-    background-color: #fff;
+.group-item-action .ant-btn {
+  background-color: #fff;
 }
 .group-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
 }
 
 .group-name-text {
-    color: #333;
-    font-size: 13px;
+  color: #333;
+  font-size: 13px;
 }
 
 .group-name-text-selected {
-    color: #1890ff;
+  color: #1890ff;
 }
 
 .group-name-text-disabled {
-    color: #999;
+  color: #999;
 }
 
 .group-action-btn {
-    padding: 2px;
+  padding: 2px;
 }
 
 .main-content {
-    background: #fff;
+  background: #fff;
 }
 
 .main-editor-container {
-    height: 100%;
-    padding: 16px;
+  height: 100%;
+  padding: 16px;
 }
 
 .main-placeholder {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    color: #999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
 }
 
 .name-input {
-    width: 150px;
+  width: 150px;
 }
 
 .edit-name-input {
-    width: 100px;
+  width: 100px;
 }

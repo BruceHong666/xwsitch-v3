@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+    "ms-vscode-remote.remote-containers",
+    "EditorConfig.EditorConfig",
+    "ms-vscode.sublime-keybindings",
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ]
+}
