@@ -1,6 +1,6 @@
 import { message } from 'antd';
 import { useEffect, useState } from 'react';
-import { GroupRuleVo } from '../types';
+import { GroupRuleVo } from '../../types';
 import { DEFAULT_RULE } from '../utils/const';
 import { compatStorage as storage } from '../../utils/storage';
 import './App.css';
@@ -42,9 +42,11 @@ function App() {
         // 创建默认规则组
         const defaultGroup: GroupRuleVo = {
           id: '1',
-          name: 'Default Group',
+          groupName: 'Default Group',
           enabled: true,
           ruleText: DEFAULT_RULE,
+          createTime: new Date().toISOString(),
+          updateTime: new Date().toISOString(),
         };
         setGroups([defaultGroup]);
         const saveResult = await storage.saveGroups([defaultGroup]);
@@ -65,6 +67,19 @@ function App() {
   };
 
   /**
+   * 通知后台脚本更新徽章
+   */
+  const notifyBadgeUpdate = () => {
+    try {
+      if (typeof browser !== 'undefined' && browser.runtime) {
+        browser.runtime.sendMessage({ type: 'UPDATE_BADGE' });
+      }
+    } catch (error) {
+      console.log('Failed to notify badge update:', error);
+    }
+  };
+
+  /**
    * 处理规则组数据变更
    */
   const handleGroupsChange = async (
@@ -73,6 +88,8 @@ function App() {
     const result = await storage.saveGroups(newGroups);
     if (result.success) {
       setGroups(newGroups);
+      // 立即通知后台脚本更新徽章
+      notifyBadgeUpdate();
     }
     return result;
   };
@@ -86,6 +103,8 @@ function App() {
     const result = await storage.saveGlobalEnabled(enabled);
     if (result.success) {
       setGlobalEnabled(enabled);
+      // 立即通知后台脚本更新徽章
+      notifyBadgeUpdate();
     }
     return result;
   };

@@ -22,7 +22,7 @@ import {
   message,
 } from 'antd';
 import { useEffect, useState } from 'react';
-import { GroupRuleVo } from '../../../types';
+import { GroupRuleVo } from '../../../../types';
 import { DEFAULT_NEW_RULE } from '../../../utils/const';
 import { validateJsonFormat } from '../../../utils/json';
 import CodeMirrorEditor from '../code-mirror-editor';
@@ -85,12 +85,14 @@ export function Rule({
   // 验证所有规则组的JSON格式
   useEffect(() => {
     const errors: Record<string, string> = {};
+    
     groups.forEach(group => {
       const validation = validateJsonFormat(group.ruleText);
       if (!validation.isValid && validation.error) {
         errors[group.id] = validation.error;
       }
     });
+    
     setJsonErrors(errors);
   }, [groups]);
 
@@ -121,7 +123,7 @@ export function Rule({
       } else {
         message.error(result.message || '保存失败');
       }
-    } catch (e) {
+    } catch {
       message.error('保存失败');
     } finally {
       setLoading(false);
@@ -141,9 +143,11 @@ export function Rule({
       setLoading(true);
       const newGroup: GroupRuleVo = {
         id: Date.now().toString(),
-        name: newGroupName.trim(),
+        groupName: newGroupName.trim(),
         enabled: true,
         ruleText: DEFAULT_NEW_RULE,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString(),
       };
       const updatedGroups = [...groups, newGroup];
 
@@ -155,7 +159,7 @@ export function Rule({
       } else {
         message.error(result.message || '创建失败');
       }
-    } catch (e) {
+    } catch {
       message.error('创建失败');
     } finally {
       setLoading(false);
@@ -190,7 +194,7 @@ export function Rule({
           } else {
             message.error(result.message || '删除失败');
           }
-        } catch (e) {
+        } catch {
           message.error('删除失败');
         } finally {
           setLoading(false);
@@ -207,9 +211,11 @@ export function Rule({
       setLoading(true);
       const newGroup: GroupRuleVo = {
         id: Date.now().toString(),
-        name: `${group.name} - 副本`,
+        groupName: `${group.groupName} - 副本`,
         enabled: group.enabled,
         ruleText: group.ruleText,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString(),
       };
       const updatedGroups = [...groups, newGroup];
 
@@ -219,7 +225,7 @@ export function Rule({
       } else {
         message.error(result.message || '复制失败');
       }
-    } catch (e) {
+    } catch {
       message.error('复制失败');
     } finally {
       setLoading(false);
@@ -246,7 +252,7 @@ export function Rule({
     try {
       setLoading(true);
       const updatedGroups = groups.map(g =>
-        g.id === groupId ? { ...g, name: editingGroupName.trim() } : g
+        g.id === groupId ? { ...g, groupName: editingGroupName.trim() } : g
       );
 
       const result = await onChange(updatedGroups);
@@ -257,7 +263,7 @@ export function Rule({
       } else {
         message.error(result.message || '修改失败');
       }
-    } catch (e) {
+    } catch {
       message.error('修改失败');
     } finally {
       setLoading(false);
@@ -278,7 +284,7 @@ export function Rule({
       if (!result.success) {
         message.error(result.message || '操作失败');
       }
-    } catch (e) {
+    } catch {
       message.error('操作失败');
     } finally {
       setLoading(false);
@@ -295,7 +301,7 @@ export function Rule({
       if (!result.success) {
         message.error(result.message || '操作失败');
       }
-    } catch (e) {
+    } catch {
       message.error('操作失败');
     } finally {
       setLoading(false);
@@ -309,8 +315,6 @@ export function Rule({
     try {
       if (typeof browser !== 'undefined' && browser.runtime) {
         browser.runtime.openOptionsPage();
-      } else if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.openOptionsPage();
       }
     } catch (error) {
       console.error('Failed to open options page:', error);
@@ -324,10 +328,6 @@ export function Rule({
     try {
       if (typeof browser !== 'undefined' && browser.tabs) {
         browser.tabs.create({
-          url: 'https://github.com/BruceHong666/xswitch-v3',
-        });
-      } else if (typeof chrome !== 'undefined' && chrome.tabs) {
-        chrome.tabs.create({
           url: 'https://github.com/BruceHong666/xswitch-v3',
         });
       } else {
@@ -346,16 +346,10 @@ export function Rule({
     try {
       if (typeof browser !== 'undefined' && browser.tabs && browser.runtime) {
         browser.tabs.create({
-          url: browser.runtime.getURL('popup.html'),
+          url: browser.runtime.getURL('/popup.html'),
         });
-      } else if (
-        typeof chrome !== 'undefined' &&
-        chrome.tabs &&
-        chrome.runtime
-      ) {
-        chrome.tabs.create({
-          url: chrome.runtime.getURL('popup.html'),
-        });
+      } else {
+        console.warn('No browser extension API available');
       }
     } catch (error) {
       console.error('Failed to open console:', error);
@@ -486,7 +480,7 @@ export function Rule({
                                     className={`group-name-text ${isSelected ? 'group-name-text-selected' : ''} ${!group.enabled ? 'group-name-text-disabled' : ''}`}
                                     style={{ color: '#ff4d4f' }}
                                   >
-                                    {group.name}
+                                    {group.groupName}
                                   </Text>
                                 </Tooltip>
                               ) : (
@@ -494,7 +488,7 @@ export function Rule({
                                   strong={isSelected}
                                   className={`group-name-text ${isSelected ? 'group-name-text-selected' : ''} ${!group.enabled ? 'group-name-text-disabled' : ''}`}
                                 >
-                                  {group.name}
+                                  {group.groupName}
                                 </Text>
                               )}
                             </Badge>
@@ -509,7 +503,7 @@ export function Rule({
                               icon={<EditOutlined />}
                               onClick={e => {
                                 e.stopPropagation();
-                                handleEditGroupName(group.id, group.name);
+                                handleEditGroupName(group.id, group.groupName);
                               }}
                               className="group-action-btn"
                             />
@@ -533,7 +527,7 @@ export function Rule({
                                 icon={<DeleteOutlined />}
                                 onClick={e => {
                                   e.stopPropagation();
-                                  handleDeleteGroup(group.id, group.name);
+                                  handleDeleteGroup(group.id, group.groupName);
                                 }}
                                 className="group-action-btn"
                               />
@@ -561,7 +555,7 @@ export function Rule({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Text type="secondary">
-                {selectedGroup?.name ?? '未选择规则组'}
+                {selectedGroup?.groupName ?? '未选择规则组'}
               </Text>
               {selectedGroup && jsonErrors[selectedGroup.id] && (
                 <Tooltip

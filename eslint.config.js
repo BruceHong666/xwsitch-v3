@@ -8,6 +8,15 @@ import prettier from 'eslint-config-prettier';
 export default [
   js.configs.recommended,
   {
+    ignores: [
+      '.output/**',
+      '.wxt/**',
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+    ],
+  },
+  {
     files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
       parser: typescriptParser,
@@ -17,6 +26,31 @@ export default [
         ecmaFeatures: {
           jsx: true,
         },
+      },
+      globals: {
+        browser: 'readonly',
+        chrome: 'readonly',
+        console: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        importScripts: 'readonly',
+        HTMLDivElement: 'readonly',
+        URL: 'readonly',
+        Location: 'readonly',
+        WebSocket: 'readonly',
+        CustomEvent: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        MutationObserver: 'readonly',
+        fetch: 'readonly',
+        location: 'readonly',
+        Event: 'readonly',
+        AbortController: 'readonly',
+        defineContentScript: 'readonly',
+        defineBackground: 'readonly',
       },
     },
     plugins: {

@@ -1,4 +1,4 @@
-import { GroupRuleVo } from '../types';
+import { GroupRuleVo } from '../../types';
 
 const STORAGE_KEY = 'xswitch_groups';
 const GLOBAL_ENABLED_KEY = 'xswitch_global_enabled';
@@ -11,10 +11,6 @@ const getStorageAPI = () => {
   if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
     return browser.storage;
   }
-  // 兼容 chrome API
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    return chrome.storage;
-  }
   // 如果都不可用，返回null
   return null;
 };
@@ -23,7 +19,7 @@ const getStorageAPI = () => {
  * 使用localStorage作为后备方案
  */
 const fallbackStorage = {
-  async set(data: Record<string, any>): Promise<void> {
+  async set(data: Record<string, unknown>): Promise<void> {
     for (const [key, value] of Object.entries(data)) {
       localStorage.setItem(key, JSON.stringify(value));
     }
@@ -50,7 +46,11 @@ export const storage = {
   async saveGroups(groups: GroupRuleVo[]): Promise<void> {
     try {
       const storageAPI = getStorageAPI();
-      await storageAPI.local.set({ [STORAGE_KEY]: groups });
+      if (storageAPI) {
+        await storageAPI.local.set({ [STORAGE_KEY]: groups });
+      } else {
+        throw new Error('No storage API available');
+      }
     } catch (error) {
       console.warn('Extension storage not available, using localStorage:', error);
       try {
@@ -65,8 +65,12 @@ export const storage = {
   async loadGroups(): Promise<GroupRuleVo[]> {
     try {
       const storageAPI = getStorageAPI();
-      const result = await storageAPI.local.get([STORAGE_KEY]);
-      return result[STORAGE_KEY] || [];
+      if (storageAPI) {
+        const result = await storageAPI.local.get([STORAGE_KEY]);
+        return result[STORAGE_KEY] || [];
+      } else {
+        throw new Error('No storage API available');
+      }
     } catch (error) {
       console.warn('Extension storage not available, using localStorage:', error);
       try {
@@ -82,7 +86,11 @@ export const storage = {
   async saveGlobalEnabled(enabled: boolean): Promise<void> {
     try {
       const storageAPI = getStorageAPI();
-      await storageAPI.local.set({ [GLOBAL_ENABLED_KEY]: enabled });
+      if (storageAPI) {
+        await storageAPI.local.set({ [GLOBAL_ENABLED_KEY]: enabled });
+      } else {
+        throw new Error('No storage API available');
+      }
     } catch (error) {
       console.warn('Extension storage not available, using localStorage:', error);
       try {
@@ -97,8 +105,12 @@ export const storage = {
   async loadGlobalEnabled(): Promise<boolean> {
     try {
       const storageAPI = getStorageAPI();
-      const result = await storageAPI.local.get([GLOBAL_ENABLED_KEY]);
-      return result[GLOBAL_ENABLED_KEY] ?? true;
+      if (storageAPI) {
+        const result = await storageAPI.local.get([GLOBAL_ENABLED_KEY]);
+        return result[GLOBAL_ENABLED_KEY] ?? true;
+      } else {
+        throw new Error('No storage API available');
+      }
     } catch (error) {
       console.warn('Extension storage not available, using localStorage:', error);
       try {
@@ -141,10 +153,10 @@ export const storage = {
   },
 
   // 监听存储变化
-  onStorageChanged(callback: (changes: any) => void): void {
+  onStorageChanged(callback: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>) => void): void {
     try {
       const storageAPI = getStorageAPI();
-      storageAPI.onChanged.addListener((changes, namespace) => {
+      storageAPI?.onChanged.addListener((changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, namespace: string) => {
         if (namespace === 'local') {
           callback(changes);
         }

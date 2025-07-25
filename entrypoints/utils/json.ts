@@ -8,7 +8,7 @@ export const parseJsonWithComments = (jsonString: string) => {
   try {
     const result = JSON.parse(originalJson);
     return result;
-  } catch (error) {
+  } catch {
     // 如果标准JSON解析失败，则进行注释处理
   }
   
@@ -100,9 +100,11 @@ function cleanupJsonFormat(jsonString: string): string {
   let cleanJson = jsonString;
   
   // 移除尾随逗号
+  // eslint-disable-next-line no-useless-escape
   cleanJson = cleanJson.replace(/,(\s*[\]\}])/g, '$1');
   
   // 移除开头的多余逗号
+  // eslint-disable-next-line no-useless-escape
   cleanJson = cleanJson.replace(/([\[\{]\s*),+/g, '$1');
   
   // 清理连续的逗号
@@ -112,6 +114,7 @@ function cleanupJsonFormat(jsonString: string): string {
   cleanJson = cleanJson
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 移除控制字符但保留\n和\t
     .trim();
   
@@ -134,5 +137,34 @@ export const validateJsonFormat = (jsonString: string): { isValid: boolean; erro
       isValid: false, 
       error: error instanceof Error ? error.message : '未知的JSON格式错误' 
     };
+  }
+};
+
+/**
+ * 计算规则文本中的有效规则数量
+ */
+export const countActiveRules = (ruleText: string): number => {
+  if (!ruleText.trim()) {
+    return 0;
+  }
+  
+  try {
+    const config = parseJsonWithComments(ruleText);
+    let count = 0;
+    
+    // 计算 proxy 规则数量
+    if (config.proxy && Array.isArray(config.proxy)) {
+      count += config.proxy.length;
+    }
+    
+    // 计算 cors 规则数量
+    if (config.cors && Array.isArray(config.cors)) {
+      count += config.cors.length;
+    }
+    
+    return count;
+  } catch {
+    // JSON 解析失败，返回 0
+    return 0;
   }
 };

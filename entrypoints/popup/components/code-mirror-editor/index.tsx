@@ -107,7 +107,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
                 },
               });
               return true;
-            } catch (e) {
+            } catch {
               // 如果不是有效JSON，不格式化
               console.warn('Cannot format: Invalid JSON syntax');
               return false;

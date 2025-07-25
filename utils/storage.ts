@@ -1,4 +1,4 @@
-import { GroupRuleVo } from '../entrypoints/types';
+import { GroupRuleVo } from '../types';
 
 const STORAGE_KEY = 'xswitch_groups';
 const GLOBAL_ENABLED_KEY = 'xswitch_global_enabled';
@@ -20,16 +20,31 @@ interface StorageAPI {
   remove(keys: string[]): Promise<void>;
   clear(): Promise<void>;
   onChanged?: {
-    addListener(callback: (changes: any, namespace: string) => void): void;
+    addListener(callback: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, namespace: string) => void): void;
   };
 }
+
+/**
+ * 检测当前运行环境
+ */
+const isServiceWorker = () => {
+  return typeof importScripts === 'function' || typeof window === 'undefined';
+};
 
 /**
  * 获取可用的存储API - 更好的错误处理和类型支持
  */
 const getStorageAPI = (): StorageAPI | null => {
+  console.log('🔍 Detecting storage API... Environment:', JSON.stringify({
+    isServiceWorker: isServiceWorker(),
+    hasBrowser: typeof browser !== 'undefined',
+    hasChrome: false,
+    hasLocalStorage: typeof localStorage !== 'undefined'
+  }));
+
   // 优先使用 browser API (WebExtensions标准)
   if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
+    console.log('✅ Using browser.storage.local API');
     return {
       get: (keys) => browser.storage.local.get(keys),
       set: (data) => browser.storage.local.set(data),
@@ -39,63 +54,89 @@ const getStorageAPI = (): StorageAPI | null => {
     };
   }
   
-  // 兼容 chrome API
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    return {
-      get: (keys) => new Promise((resolve) => {
-        chrome.storage.local.get(keys, resolve);
-      }),
-      set: (data) => new Promise((resolve) => {
-        chrome.storage.local.set(data, resolve);
-      }),
-      remove: (keys) => new Promise((resolve) => {
-        chrome.storage.local.remove(keys, resolve);
-      }),
-      clear: () => new Promise((resolve) => {
-        chrome.storage.local.clear(resolve);
-      }),
-      onChanged: chrome.storage.onChanged,
-    };
-  }
-  
+  console.log('❌ No extension storage API available');
   return null;
 };
 
 /**
- * localStorage fallback implementation
+ * localStorage fallback implementation with change notification
  */
-const createLocalStorageFallback = (): StorageAPI => ({
-  async get(keys: string[]): Promise<Record<string, any>> {
-    const result: Record<string, any> = {};
-    for (const key of keys) {
-      const item = localStorage.getItem(key);
-      if (item !== null) {
-        try {
-          result[key] = JSON.parse(item);
-        } catch {
-          result[key] = item;
+const createLocalStorageFallback = (): StorageAPI => {
+  const listeners: Array<(changes: any, namespace: string) => void> = [];
+  
+  const notifyChanges = (key: string, oldValue: any, newValue: any) => {
+    const changes = {
+      [key]: {
+        oldValue,
+        newValue
+      }
+    };
+    console.log(`🔔 Notifying ${listeners.length} listeners of change:`, JSON.stringify(changes));
+    listeners.forEach((listener, index) => {
+      try {
+        console.log(`🔔 Calling listener ${index + 1}/${listeners.length}`);
+        listener(changes, 'local');
+      } catch (error) {
+        console.error(`❌ Error in storage change listener ${index + 1}:`, error);
+      }
+    });
+  };
+
+  return {
+    async get(keys: string[]): Promise<Record<string, any>> {
+      const result: Record<string, any> = {};
+      for (const key of keys) {
+        const item = localStorage.getItem(key);
+        if (item !== null) {
+          try {
+            result[key] = JSON.parse(item);
+          } catch {
+            result[key] = item;
+          }
         }
       }
+      return result;
+    },
+    
+    async set(data: Record<string, any>): Promise<void> {
+      console.log('📝 localStorage.set() called:', JSON.stringify(data));
+      for (const [key, value] of Object.entries(data)) {
+        const oldItem = localStorage.getItem(key);
+        const oldValue = oldItem ? JSON.parse(oldItem) : undefined;
+        
+        console.log(`📝 Setting localStorage[${key}]:`, JSON.stringify({ oldValue, newValue: value }));
+        localStorage.setItem(key, JSON.stringify(value));
+        
+        // 通知变化
+        console.log(`📡 Notifying change for key: ${key}`);
+        notifyChanges(key, oldValue, value);
+      }
+    },
+    
+    async remove(keys: string[]): Promise<void> {
+      for (const key of keys) {
+        const oldItem = localStorage.getItem(key);
+        const oldValue = oldItem ? JSON.parse(oldItem) : undefined;
+        
+        localStorage.removeItem(key);
+        
+        // 通知变化
+        notifyChanges(key, oldValue, undefined);
+      }
+    },
+    
+    async clear(): Promise<void> {
+      localStorage.clear();
+    },
+    
+    onChanged: {
+      addListener(callback: (changes: any, namespace: string) => void) {
+        console.log(`👂 Adding storage change listener (total: ${listeners.length + 1})`);
+        listeners.push(callback);
+      }
     }
-    return result;
-  },
-  
-  async set(data: Record<string, any>): Promise<void> {
-    for (const [key, value] of Object.entries(data)) {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-  },
-  
-  async remove(keys: string[]): Promise<void> {
-    for (const key of keys) {
-      localStorage.removeItem(key);
-    }
-  },
-  
-  async clear(): Promise<void> {
-    localStorage.clear();
-  },
-});
+  };
+};
 
 /**
  * 增强的存储管理器 - 基于原生 Extension APIs 但提供更好的类型支持
@@ -105,7 +146,18 @@ export class EnhancedStorageManager {
   private storageAPI: StorageAPI;
   
   private constructor() {
-    this.storageAPI = getStorageAPI() || createLocalStorageFallback();
+    const extensionStorageAPI = getStorageAPI();
+    
+    if (extensionStorageAPI) {
+      this.storageAPI = extensionStorageAPI;
+    } else if (!isServiceWorker()) {
+      // 只在非service worker环境中使用localStorage fallback
+      console.log('⚠️ Using localStorage fallback (not in service worker)');
+      this.storageAPI = createLocalStorageFallback();
+    } else {
+      // 在service worker中，如果没有扩展API，抛出错误
+      throw new Error('Extension storage API not available in service worker environment');
+    }
   }
   
   static getInstance(): EnhancedStorageManager {
@@ -181,12 +233,14 @@ export class EnhancedStorageManager {
   /**
    * 创建新规则组
    */
-  async createGroup(name: string, ruleText: string = '{}'): Promise<GroupRuleVo> {
+  async createGroup(groupName: string, ruleText: string = '{}'): Promise<GroupRuleVo> {
     const newGroup: GroupRuleVo = {
       id: Date.now().toString(),
-      name,
+      groupName,
       enabled: true,
       ruleText,
+      createTime: new Date().toISOString(),
+      updateTime: new Date().toISOString(),
     };
     
     await this.saveGroup(newGroup);
