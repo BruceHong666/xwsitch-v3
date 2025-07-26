@@ -1,142 +1,159 @@
+import JSON5 from 'json5';
+
 /**
- * JSON注释处理函数 - 改进版，优先尝试标准JSON解析
+ * JSON注释处理函数 - 使用 JSON5 库支持注释和更宽松的语法
  */
 export const parseJsonWithComments = (jsonString: string) => {
   const originalJson = jsonString.trim();
-  
+
+  // 处理空字符串
+  if (!originalJson) {
+    return undefined;
+  }
+
   // 首先尝试直接解析标准JSON（最常见的情况）
   try {
     const result = JSON.parse(originalJson);
     return result;
   } catch {
-    // 如果标准JSON解析失败，则进行注释处理
+    // 如果标准JSON解析失败，使用JSON5解析（支持注释、尾随逗号等）
+    const json = JSON5.parse(originalJson);
+    console.log(JSON.stringify({ originalJson, json }, null, 2));
+    return json;
   }
-  
-  // 如果标准JSON解析失败，则进行注释处理
-  let cleanJson = originalJson;
-  
-  // 智能移除注释，避免破坏字符串内容
-  cleanJson = removeJsonComments(cleanJson);
-  
-  // 清理格式问题
-  cleanJson = cleanupJsonFormat(cleanJson);
-  
-  return JSON.parse(cleanJson);
 };
-
-/**
- * 智能移除JSON中的注释，保护字符串内容
- */
-function removeJsonComments(jsonString: string): string {
-  let result = '';
-  let inString = false;
-  let stringDelimiter = '';
-  let i = 0;
-  
-  while (i < jsonString.length) {
-    const char = jsonString[i];
-    const nextChar = jsonString[i + 1] || '';
-    const prevChar = i > 0 ? jsonString[i - 1] : '';
-    
-    // 检查字符串的开始和结束
-    if (!inString && (char === '"' || char === "'")) {
-      inString = true;
-      stringDelimiter = char;
-      result += char;
-      i++;
-      continue;
-    }
-    
-    if (inString) {
-      if (char === stringDelimiter && prevChar !== '\\') {
-        // 字符串结束（不是转义的引号）
-        inString = false;
-        stringDelimiter = '';
-      }
-      result += char;
-      i++;
-      continue;
-    }
-    
-    // 不在字符串内，检查注释
-    if (char === '/' && nextChar === '/') {
-      // 单行注释 - 跳过到行末
-      while (i < jsonString.length && jsonString[i] !== '\n' && jsonString[i] !== '\r') {
-        i++;
-      }
-      // 保留换行符
-      if (i < jsonString.length && (jsonString[i] === '\n' || jsonString[i] === '\r')) {
-        result += jsonString[i];
-        i++;
-      }
-      continue;
-    }
-    
-    if (char === '/' && nextChar === '*') {
-      // 多行注释 - 跳过到 */
-      i += 2;
-      while (i < jsonString.length - 1) {
-        if (jsonString[i] === '*' && jsonString[i + 1] === '/') {
-          i += 2;
-          break;
-        }
-        i++;
-      }
-      continue;
-    }
-    
-    // 普通字符
-    result += char;
-    i++;
-  }
-  
-  return result;
-}
-
-/**
- * 清理JSON格式问题
- */
-function cleanupJsonFormat(jsonString: string): string {
-  let cleanJson = jsonString;
-  
-  // 移除尾随逗号
-  // eslint-disable-next-line no-useless-escape
-  cleanJson = cleanJson.replace(/,(\s*[\]\}])/g, '$1');
-  
-  // 移除开头的多余逗号
-  // eslint-disable-next-line no-useless-escape
-  cleanJson = cleanJson.replace(/([\[\{]\s*),+/g, '$1');
-  
-  // 清理连续的逗号
-  cleanJson = cleanJson.replace(/,+/g, ',');
-  
-  // 规范化空白字符
-  cleanJson = cleanJson
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 移除控制字符但保留\n和\t
-    .trim();
-  
-  return cleanJson;
-}
 
 /**
  * 验证JSON格式并返回详细的错误信息
  */
-export const validateJsonFormat = (jsonString: string): { isValid: boolean; error?: string } => {
+export const validateJsonFormat = (
+  jsonString: string
+): { isValid: boolean; error?: string } => {
   if (!jsonString.trim()) {
     return { isValid: true }; // 空字符串视为有效
   }
-  
+
   try {
     parseJsonWithComments(jsonString);
     return { isValid: true };
   } catch (error) {
-    return { 
-      isValid: false, 
-      error: error instanceof Error ? error.message : '未知的JSON格式错误' 
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : '未知的JSON格式错误',
     };
+  }
+};
+
+interface ProxyRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  source: string;
+  target: string;
+  type: 'string' | 'regex';
+}
+
+interface CorsRule {
+  id: string;
+  pattern: string;
+  enabled: boolean;
+}
+
+/**
+ * 解析规则组配置 - 支持xswitch的数组格式和标准对象格式
+ */
+export const parseRuleGroup = (
+  ruleText: string
+): { proxy?: ProxyRule[]; cors?: CorsRule[] } => {
+  if (!ruleText.trim()) {
+    return {};
+  }
+
+  try {
+    const config = parseJsonWithComments(ruleText);
+    
+    // 处理proxy规则
+    let proxyRules: ProxyRule[] = [];
+    if (config.proxy && Array.isArray(config.proxy)) {
+      proxyRules = config.proxy.map((rule: unknown, index: number): ProxyRule => {
+        // 兼容xswitch的数组格式 [source, target]
+        if (Array.isArray(rule) && rule.length >= 2) {
+          return {
+            id: `proxy_${index}`,
+            name: `Rule ${index + 1}`,
+            enabled: true,
+            source: rule[0],
+            target: rule[1],
+            type: 'string' as const
+          };
+        }
+        // 标准对象格式
+        if (typeof rule === 'object' && rule && 'source' in rule && 'target' in rule) {
+          const ruleObj = rule as { 
+            id?: string; 
+            name?: string; 
+            enabled?: boolean; 
+            source: string; 
+            target: string; 
+            type?: 'string' | 'regex' 
+          };
+          return {
+            id: ruleObj.id || `proxy_${index}`,
+            name: ruleObj.name || `Rule ${index + 1}`,
+            enabled: ruleObj.enabled !== false,
+            source: ruleObj.source,
+            target: ruleObj.target,
+            type: ruleObj.type || 'string'
+          };
+        }
+        // 兼容其他格式，返回默认规则
+        return {
+          id: `proxy_${index}`,
+          name: `Rule ${index + 1}`,
+          enabled: false,
+          source: '',
+          target: '',
+          type: 'string' as const
+        };
+      });
+    }
+
+    // 处理cors规则
+    let corsRules: CorsRule[] = [];
+    if (config.cors && Array.isArray(config.cors)) {
+      corsRules = config.cors.map((rule: unknown, index: number): CorsRule => {
+        // 如果是字符串，转换为对象格式
+        if (typeof rule === 'string') {
+          return {
+            id: `cors_${index}`,
+            pattern: rule,
+            enabled: true
+          };
+        }
+        // 标准对象格式
+        if (typeof rule === 'object' && rule && 'pattern' in rule) {
+          const ruleObj = rule as { id?: string; pattern: string; enabled?: boolean };
+          return {
+            id: ruleObj.id || `cors_${index}`,
+            pattern: ruleObj.pattern,
+            enabled: ruleObj.enabled !== false
+          };
+        }
+        // 默认格式
+        return {
+          id: `cors_${index}`,
+          pattern: '',
+          enabled: false
+        };
+      });
+    }
+
+    return {
+      proxy: proxyRules,
+      cors: corsRules,
+    };
+  } catch {
+    return {};
   }
 };
 
@@ -147,21 +164,21 @@ export const countActiveRules = (ruleText: string): number => {
   if (!ruleText.trim()) {
     return 0;
   }
-  
+
   try {
-    const config = parseJsonWithComments(ruleText);
+    const parsedRules = parseRuleGroup(ruleText);
     let count = 0;
-    
+
     // 计算 proxy 规则数量
-    if (config.proxy && Array.isArray(config.proxy)) {
-      count += config.proxy.length;
+    if (parsedRules.proxy && Array.isArray(parsedRules.proxy)) {
+      count += parsedRules.proxy.length;
     }
-    
+
     // 计算 cors 规则数量
-    if (config.cors && Array.isArray(config.cors)) {
-      count += config.cors.length;
+    if (parsedRules.cors && Array.isArray(parsedRules.cors)) {
+      count += parsedRules.cors.length;
     }
-    
+
     return count;
   } catch {
     // JSON 解析失败，返回 0

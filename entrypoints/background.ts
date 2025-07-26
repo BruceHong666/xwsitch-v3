@@ -1,5 +1,6 @@
 import { compatStorage } from '../utils/storage';
 import { countActiveRules, validateJsonFormat } from './utils/json';
+import { networkService } from './utils/network';
 import { GroupRuleVo } from '../types';
 
 export default defineBackground(() => {
@@ -10,8 +11,9 @@ export default defineBackground(() => {
 
   // 监听存储变化
   compatStorage.onStorageChanged((changes) => {
-    console.log('📦 Storage changed, updating badge:', JSON.stringify(changes));
+    console.log('📦 Storage changed, updating badge and network rules:', JSON.stringify(changes));
     updateBadge();
+    updateNetworkRules();
   });
 
   // 监听来自popup的消息，立即更新徽章
@@ -25,9 +27,37 @@ export default defineBackground(() => {
     });
   }
 
-  // 插件启动时初始化徽章
+  // 插件启动时初始化徽章和网络规则
   async function initializeBadge() {
     await updateBadge();
+    await updateNetworkRules();
+  }
+
+  // 更新网络规则
+  async function updateNetworkRules() {
+    try {
+      console.log('🔄 Network rules update started...');
+      const [groups, globalEnabled] = await Promise.all([
+        compatStorage.loadGroups(),
+        compatStorage.loadGlobalEnabled(),
+      ]);
+
+      console.log('📊 Network rules update data:', JSON.stringify({ 
+        groups: groups.length, 
+        globalEnabled,
+        enabledGroups: groups.filter(g => g.enabled).length 
+      }));
+
+      // 更新网络规则
+      await networkService.updateRules(groups, globalEnabled);
+      
+      // 设置网络请求日志监听
+      networkService.setupNetworkLogging(globalEnabled, groups);
+      
+      console.log('✅ Network rules updated successfully');
+    } catch (error) {
+      console.error('❌ Failed to update network rules:', error);
+    }
   }
 
   // 更新插件徽章
