@@ -1,17 +1,23 @@
+import { GroupRuleVo } from '../types';
 import { compatStorage } from '../utils/storage';
 import { countActiveRules, validateJsonFormat } from './utils/json';
 import { networkService } from './utils/network';
-import { GroupRuleVo } from '../types';
 
 export default defineBackground(() => {
-  console.log('🚀 XSwitch V3 background script started', JSON.stringify({ id: browser.runtime.id }));
+  console.log(
+    '🚀 XSwitch V3 background script started',
+    JSON.stringify({ id: browser.runtime.id })
+  );
 
   // 初始化徽章状态
   initializeBadge();
 
   // 监听存储变化
-  compatStorage.onStorageChanged((changes) => {
-    console.log('📦 Storage changed, updating badge and network rules:', JSON.stringify(changes));
+  compatStorage.onStorageChanged(changes => {
+    console.log(
+      '📦 Storage changed, updating badge and network rules:',
+      JSON.stringify(changes)
+    );
     updateBadge();
     updateNetworkRules();
   });
@@ -20,17 +26,54 @@ export default defineBackground(() => {
   if (typeof browser !== 'undefined' && browser.runtime) {
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'UPDATE_BADGE') {
-        console.log('📨 Received UPDATE_BADGE message from popup:', JSON.stringify(message));
+        console.log(
+          '📨 Received UPDATE_BADGE message from popup:',
+          JSON.stringify(message)
+        );
         updateBadge();
         sendResponse({ success: true });
       }
     });
   }
 
-  // 插件启动时初始化徽章和网络规则
+  // 插件启动时初始化默认数据、徽章和网络规则
   async function initializeBadge() {
-    await updateBadge();
+    await initializeDefaultData();
     await updateNetworkRules();
+    await updateBadge();
+  }
+
+  // 初始化默认数据
+  async function initializeDefaultData() {
+    try {
+      console.log('🔧 Initializing default data...');
+      
+      // 检查是否已有全局启用状态设置
+      const hasGlobalEnabled = await compatStorage.hasGlobalEnabled();
+      if (!hasGlobalEnabled) {
+        console.log('💾 Setting default global enabled state to true');
+        await compatStorage.saveGlobalEnabled(true);
+      }
+
+      // 检查是否已有规则组
+      const groups = await compatStorage.loadGroups();
+      if (groups.length === 0) {
+        console.log('💾 Creating default rule group');
+        const defaultGroup: GroupRuleVo = {
+          id: Date.now().toString(),
+          groupName: '默认规则组',
+          enabled: true,
+          ruleText: '{}',
+          createTime: new Date().toISOString(),
+          updateTime: new Date().toISOString(),
+        };
+        await compatStorage.saveGroups([defaultGroup]);
+      }
+
+      console.log('✅ Default data initialization completed');
+    } catch (error) {
+      console.error('❌ Failed to initialize default data:', error);
+    }
   }
 
   // 更新网络规则
@@ -42,18 +85,21 @@ export default defineBackground(() => {
         compatStorage.loadGlobalEnabled(),
       ]);
 
-      console.log('📊 Network rules update data:', JSON.stringify({ 
-        groups: groups.length, 
-        globalEnabled,
-        enabledGroups: groups.filter(g => g.enabled).length 
-      }));
+      console.log(
+        '📊 Network rules update data:',
+        JSON.stringify({
+          groups: groups.length,
+          globalEnabled,
+          enabledGroups: groups.filter(g => g.enabled).length,
+        })
+      );
 
       // 更新网络规则
       await networkService.updateRules(groups, globalEnabled);
-      
+
       // 设置网络请求日志监听
       networkService.setupNetworkLogging(globalEnabled, groups);
-      
+
       console.log('✅ Network rules updated successfully');
     } catch (error) {
       console.error('❌ Failed to update network rules:', error);
@@ -69,11 +115,14 @@ export default defineBackground(() => {
         compatStorage.loadGlobalEnabled(),
       ]);
 
-      console.log('📊 Badge update data:', JSON.stringify({ 
-        groups: groups.length, 
-        globalEnabled,
-        enabledGroups: groups.filter(g => g.enabled).length 
-      }));
+      console.log(
+        '📊 Badge update data:',
+        JSON.stringify({
+          groups: groups.length,
+          globalEnabled,
+          enabledGroups: groups.filter(g => g.enabled).length,
+        })
+      );
 
       if (!globalEnabled) {
         // 全局关闭时显示 OFF

@@ -219,7 +219,15 @@ export class EnhancedStorageManager {
    */
   async loadGlobalEnabled(): Promise<boolean> {
     const result = await this.storageAPI.get([GLOBAL_ENABLED_KEY]);
-    return result[GLOBAL_ENABLED_KEY] ?? false;
+    return result[GLOBAL_ENABLED_KEY] ?? true; // 默认为启用状态
+  }
+
+  /**
+   * 检查全局启用状态是否已存在于存储中
+   */
+  async hasGlobalEnabled(): Promise<boolean> {
+    const result = await this.storageAPI.get([GLOBAL_ENABLED_KEY]);
+    return GLOBAL_ENABLED_KEY in result;
   }
 
   /**
@@ -402,6 +410,15 @@ export const compatStorage = {
     }
   },
 
+  async hasGlobalEnabled(): Promise<boolean> {
+    try {
+      return await enhancedStorage.hasGlobalEnabled();
+    } catch (error) {
+      console.error('Failed to check global enabled existence:', error);
+      return false;
+    }
+  },
+
   async exportData(): Promise<string> {
     return enhancedStorage.exportData();
   },
@@ -419,7 +436,7 @@ export const compatStorage = {
   },
 
   // 监听存储变化 (简化版)
-  onStorageChanged(callback: (changes: any) => void): void {
+  onStorageChanged(callback: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>) => void): void {
     enhancedStorage.onStorageChanged(callback);
   },
 };

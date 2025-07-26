@@ -8,7 +8,7 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import {
-  Badge,
+  Alert,
   Button,
   Checkbox,
   Input,
@@ -21,7 +21,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GroupRuleVo } from '../../../../types';
 import { DEFAULT_NEW_RULE } from '../../../utils/const';
 import { validateJsonFormat } from '../../../utils/json';
@@ -74,6 +74,14 @@ export function Rule({
   const [loading, setLoading] = useState(false);
   // JSON验证错误映射
   const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
+  // 用于跟踪是否正在保存，避免保存期间内容被重置
+  const isSavingRef = useRef(false);
+  // 节流保存的定时器
+  const saveTimeoutRef = useRef<number | null>(null);
+  // 保存状态提示
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
 
   // 初始化选中第一个规则组
   useEffect(() => {
@@ -85,50 +93,126 @@ export function Rule({
   // 验证所有规则组的JSON格式
   useEffect(() => {
     const errors: Record<string, string> = {};
-    
+
     groups.forEach(group => {
       const validation = validateJsonFormat(group.ruleText);
       if (!validation.isValid && validation.error) {
         errors[group.id] = validation.error;
       }
     });
-    
+
     setJsonErrors(errors);
   }, [groups]);
 
   // 同步编辑器内容
   useEffect(() => {
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
-    if (selectedGroup) {
+    if (selectedGroup && !loading && !isSavingRef.current) {
+      // 只有在非保存状态下才更新编辑器内容，避免保存时被重置
+      console.log('同步编辑器内容:', {
+        groupId: selectedGroup.id,
+        groupName: selectedGroup.groupName,
+        loading,
+        isSaving: isSavingRef.current,
+      });
       setEditorValue(selectedGroup.ruleText);
     }
-  }, [selectedGroupId, groups]);
+  }, [selectedGroupId, groups, loading]);
 
   /**
-   * 保存规则配置
+   * 节流保存规则配置（输入时触发，1秒间隔）
    */
-  const handleSaveConfig = async () => {
-    const targetGroup = groups.find(g => g.id === selectedGroupId);
-    if (!targetGroup) return;
+  const throttledSave = useCallback(
+    async (valueToSave: string) => {
+      const targetGroup = groups.find(g => g.id === selectedGroupId);
 
-    try {
-      setLoading(true);
-      const updatedGroups = groups.map(g =>
-        g.id === selectedGroupId ? { ...g, ruleText: editorValue } : g
-      );
+      console.log('节流保存调试信息:', {
+        selectedGroupId,
+        targetGroup: targetGroup
+          ? { id: targetGroup.id, groupName: targetGroup.groupName }
+          : null,
+        valueToSave: valueToSave.substring(0, 100) + '...',
+        targetRuleText: targetGroup
+          ? targetGroup.ruleText.substring(0, 100) + '...'
+          : null,
+        isEqual: targetGroup ? valueToSave === targetGroup.ruleText : false,
+      });
 
-      const result = await onChange(updatedGroups);
-      if (result.success) {
-        message.success(result.message || '规则配置保存成功！');
-      } else {
-        message.error(result.message || '保存失败');
+      if (!targetGroup || valueToSave === targetGroup.ruleText) {
+        console.log('跳过保存：', !targetGroup ? '未找到目标组' : '内容未变化');
+        setSaveStatus('idle');
+        return;
       }
-    } catch {
-      message.error('保存失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      try {
+        isSavingRef.current = true;
+        setSaveStatus('saving');
+
+        const updatedGroups = groups.map(g =>
+          g.id === selectedGroupId
+            ? {
+                ...g,
+                ruleText: valueToSave,
+                updateTime: new Date().toISOString(),
+              }
+            : g
+        );
+
+        console.log('准备保存的数据:', {
+          selectedGroupId,
+          newRuleText: valueToSave.substring(0, 100) + '...',
+        });
+
+        const result = await onChange(updatedGroups);
+        if (result.success) {
+          console.log('节流保存成功');
+          setSaveStatus('saved');
+          // 2秒后清除保存状态
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        } else {
+          console.error('节流保存失败:', result.message);
+          setSaveStatus('error');
+          message.error(result.message || '保存失败');
+        }
+      } catch (error) {
+        console.error('节流保存异常:', error);
+        setSaveStatus('error');
+        message.error('保存失败');
+      } finally {
+        isSavingRef.current = false;
+      }
+    },
+    [groups, selectedGroupId, onChange]
+  );
+
+  /**
+   * 处理编辑器内容变化，触发节流保存
+   */
+  const handleEditorChange = useCallback(
+    (value: string) => {
+      setEditorValue(value);
+
+      // 清除之前的定时器
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // 设置新的定时器，1秒后保存
+      saveTimeoutRef.current = window.setTimeout(() => {
+        throttledSave(value);
+      }, 1000);
+    },
+    [throttledSave]
+  );
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /**
    * 创建新规则组
@@ -357,7 +441,6 @@ export function Rule({
   };
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
-  const isChanged = selectedGroup && editorValue !== selectedGroup.ruleText;
   const isInTab = window.location.href.includes('popup.html');
 
   return (
@@ -466,10 +549,7 @@ export function Rule({
                               style={{ width: '100%' }}
                             />
                           ) : (
-                            <Badge
-                              dot={isChanged && isSelected}
-                              status="processing"
-                            >
+                            <div>
                               {jsonErrors[group.id] ? (
                                 <Tooltip
                                   title={`JSON格式错误: ${jsonErrors[group.id]}`}
@@ -491,7 +571,7 @@ export function Rule({
                                   {group.groupName}
                                 </Text>
                               )}
-                            </Badge>
+                            </div>
                           )}
                         </Space>
 
@@ -544,48 +624,61 @@ export function Rule({
         </Sider>
 
         <Content className="main-content">
-          <div
-            style={{
-              padding: '8px 16px',
-              borderBottom: '1px solid #f0f0f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div>
+            {selectedGroup && jsonErrors[selectedGroup.id] && (
+              <Alert
+                message={`JSON格式错误: ${jsonErrors[selectedGroup.id]}`}
+                type="error"
+              />
+            )}
+            <div
+              style={{
+                padding: '8px 16px',
+                borderBottom: '1px solid #f0f0f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#fafafa',
+              }}
+            >
               <Text type="secondary">
                 {selectedGroup?.groupName ?? '未选择规则组'}
               </Text>
-              {selectedGroup && jsonErrors[selectedGroup.id] && (
-                <Tooltip
-                  title={`JSON格式错误: ${jsonErrors[selectedGroup.id]}`}
-                  color="red"
-                >
-                  <Text style={{ color: '#ff4d4f', fontSize: '12px' }}>
-                    ⚠ 格式错误
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  输入时自动保存
+                </Text>
+                {saveStatus === 'saving' && (
+                  <Text style={{ color: '#1890ff', fontSize: '12px' }}>
+                    💾 保存中...
                   </Text>
-                </Tooltip>
-              )}
+                )}
+                {saveStatus === 'saved' && (
+                  <Text style={{ color: '#52c41a', fontSize: '12px' }}>
+                    ✅ 已保存
+                  </Text>
+                )}
+                {saveStatus === 'error' && (
+                  <Text style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                    ❌ 保存失败
+                  </Text>
+                )}
+              </div>
             </div>
-            <Button
-              type="primary"
-              size="small"
-              onClick={handleSaveConfig}
-              disabled={!isChanged || loading}
-              loading={loading}
-            >
-              保存
-            </Button>
           </div>
           <div
             style={{
-              height: isInTab ? 'calc(100vh - 97px)' : 'calc(100% - 49px)',
+              height: '100%',
               padding: '16px',
             }}
           >
             {selectedGroup ? (
-              <CodeMirrorEditor value={editorValue} onChange={setEditorValue} />
+              <CodeMirrorEditor
+                value={editorValue}
+                onChange={handleEditorChange}
+              />
             ) : (
               <div className="main-placeholder">
                 <div>请从左侧选择一个规则组来编辑规则</div>
