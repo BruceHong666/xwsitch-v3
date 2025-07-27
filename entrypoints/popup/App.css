@@ -59,6 +59,9 @@
   width: 200px;
   border-right: 1px solid #d9d9d9;
 }
+.app-body-sider .group-item {
+  width: 200px;
+}
 .app-body-editor {
   flex: 1;
   padding: 2px;
@@ -72,6 +75,9 @@
 .header-right {
   display: flex;
   align-items: center;
+}
+.header-right .ant-btn {
+  font-size: 18px;
 }
 
 /* Sider styles */

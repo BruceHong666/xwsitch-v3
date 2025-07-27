@@ -476,7 +476,6 @@ function App() {
             <Switch
               checked={globalEnabled}
               onChange={handleGlobalEnabledChange}
-              size="small"
               unCheckedChildren="禁用"
               checkedChildren="启用"
             />
