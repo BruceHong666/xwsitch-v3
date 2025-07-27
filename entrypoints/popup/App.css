@@ -137,6 +137,9 @@
 .group-title-text.disabled {
   opacity: 0.6;
 }
+.group-title-text.error {
+  color: #ff4d4f;
+}
 
 .error-text {
   font-size: 11px;

@@ -53,7 +53,7 @@ function App() {
 
   // 获取当前选中的规则组
   const selectedGroup = useMemo(() => {
-    return groups.find(group => group.id === selectedGroupId);
+    return groups.find(group => group.id === selectedGroupId) ?? { id: null };
   }, [groups, selectedGroupId]);
 
   // 加载全局启用状态
@@ -443,20 +443,16 @@ function App() {
                             <Text
                               className={`group-title-text ${
                                 group.enabled ? 'enabled' : 'disabled'
-                              }`}
+                              } ${jsonErrors[group.id] ? 'error' : ''}`}
+                              title={
+                                jsonErrors[group.id]
+                                  ? '存在语法错误'
+                                  : group.groupName
+                              }
                             >
                               {group.groupName}
                             </Text>
                           </div>
-                        )}
-                      </div>
-                    }
-                    description={
-                      <div>
-                        {jsonErrors[group.id] && (
-                          <Text type="danger" className="error-text">
-                            JSON格式错误
-                          </Text>
                         )}
                       </div>
                     }
