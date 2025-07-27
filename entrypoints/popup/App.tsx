@@ -5,8 +5,8 @@ import {
   EditOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
-  SettingOutlined,
 } from '@ant-design/icons';
+import { useDebounceFn } from 'ahooks';
 import {
   Alert,
   Button,
@@ -22,13 +22,12 @@ import {
   message,
 } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDebounceFn } from 'ahooks';
 import { GroupRuleVo } from '../../types';
-import { ApiFactory } from './api';
 import { DEFAULT_NEW_RULE } from '../utils/const';
 import { validateJsonFormat } from '../utils/json';
-import CodeMirrorEditor from './components/code-mirror-editor';
+import { ApiFactory } from './api';
 import './App.css';
+import CodeMirrorEditor from './components/code-mirror-editor';
 
 const { Header, Content, Sider } = Layout;
 const { Text } = Typography;
@@ -58,7 +57,9 @@ function App() {
   const [editingGroupName, setEditingGroupName] = useState('');
   const [operationLoading, setOperationLoading] = useState(false);
   const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
 
   // 引用
   const isSavingRef = useRef(false);
@@ -204,7 +205,9 @@ function App() {
   /**
    * 处理全局启用状态变更
    */
-  const handleGlobalEnabledChange = async (enabled: boolean): Promise<OperationResult> => {
+  const handleGlobalEnabledChange = async (
+    enabled: boolean
+  ): Promise<OperationResult> => {
     console.log('🔄 处理全局启用状态变更:', enabled);
 
     const systemApi = ApiFactory.getSystemApi();
@@ -214,7 +217,7 @@ function App() {
       console.error('❌ 保存全局状态失败:', saveResult.error);
       return {
         success: false,
-        message: saveResult.error || '保存全局状态失败'
+        message: saveResult.error || '保存全局状态失败',
       };
     }
 
@@ -233,21 +236,28 @@ function App() {
   /**
    * 处理编辑器内容变化
    */
-  const handleEditorChange = useCallback((value: string) => {
-    setEditorValue(value);
-    
-    const selectedGroup = groups.find(group => group.id === selectedGroupId);
-    if (selectedGroup) {
-      const updatedGroups = groups.map(group =>
-        group.id === selectedGroupId 
-          ? { ...group, ruleText: value, updateTime: new Date().toISOString() }
-          : group
-      );
-      
-      // 使用防抖保存
-      debouncedSaveGroups(updatedGroups);
-    }
-  }, [selectedGroupId, groups, debouncedSaveGroups]);
+  const handleEditorChange = useCallback(
+    (value: string) => {
+      setEditorValue(value);
+
+      const selectedGroup = groups.find(group => group.id === selectedGroupId);
+      if (selectedGroup) {
+        const updatedGroups = groups.map(group =>
+          group.id === selectedGroupId
+            ? {
+                ...group,
+                ruleText: value,
+                updateTime: new Date().toISOString(),
+              }
+            : group
+        );
+
+        // 使用防抖保存
+        debouncedSaveGroups(updatedGroups);
+      }
+    },
+    [selectedGroupId, groups, debouncedSaveGroups]
+  );
 
   /**
    * 创建新规则组
@@ -261,8 +271,11 @@ function App() {
     setOperationLoading(true);
     try {
       const ruleApi = ApiFactory.getRuleApi();
-      const result = await ruleApi.createGroup(newGroupName.trim(), DEFAULT_NEW_RULE);
-      
+      const result = await ruleApi.createGroup(
+        newGroupName.trim(),
+        DEFAULT_NEW_RULE
+      );
+
       if (result.success && result.data) {
         const updatedGroups = [...groups, result.data];
         setGroups(updatedGroups);
@@ -295,11 +308,11 @@ function App() {
         try {
           const ruleApi = ApiFactory.getRuleApi();
           const result = await ruleApi.deleteGroup(groupId);
-          
+
           if (result.success) {
             const updatedGroups = groups.filter(g => g.id !== groupId);
             setGroups(updatedGroups);
-            
+
             // 如果删除的是当前选中的规则组，选中第一个
             if (selectedGroupId === groupId && updatedGroups.length > 0) {
               setSelectedGroupId(updatedGroups[0].id);
@@ -307,7 +320,7 @@ function App() {
               setSelectedGroupId('');
               setEditorValue('');
             }
-            
+
             message.success('规则组删除成功');
           } else {
             message.error('删除失败: ' + result.error);
@@ -318,7 +331,7 @@ function App() {
         } finally {
           setOperationLoading(false);
         }
-      }
+      },
     });
   };
 
@@ -330,11 +343,15 @@ function App() {
     try {
       const ruleApi = ApiFactory.getRuleApi();
       const result = await ruleApi.toggleGroup(groupId);
-      
+
       if (result.success) {
         const updatedGroups = groups.map(group =>
-          group.id === groupId 
-            ? { ...group, enabled: result.data!, updateTime: new Date().toISOString() }
+          group.id === groupId
+            ? {
+                ...group,
+                enabled: result.data!,
+                updateTime: new Date().toISOString(),
+              }
             : group
         );
         debouncedSaveGroups(updatedGroups);
@@ -370,14 +387,18 @@ function App() {
     setOperationLoading(true);
     try {
       const ruleApi = ApiFactory.getRuleApi();
-      const result = await ruleApi.updateGroup(editingGroupId, { 
-        groupName: editingGroupName.trim() 
+      const result = await ruleApi.updateGroup(editingGroupId, {
+        groupName: editingGroupName.trim(),
       });
-      
+
       if (result.success) {
         const updatedGroups = groups.map(group =>
-          group.id === editingGroupId 
-            ? { ...group, groupName: editingGroupName.trim(), updateTime: new Date().toISOString() }
+          group.id === editingGroupId
+            ? {
+                ...group,
+                groupName: editingGroupName.trim(),
+                updateTime: new Date().toISOString(),
+              }
             : group
         );
         setGroups(updatedGroups);
@@ -395,17 +416,19 @@ function App() {
     }
   };
 
-
   /**
    * 复制规则组内容
    */
   const copyGroupContent = (group: GroupRuleVo) => {
     if (typeof window !== 'undefined' && window.navigator?.clipboard) {
-      window.navigator.clipboard.writeText(group.ruleText).then(() => {
-        message.success('规则内容已复制到剪贴板');
-      }).catch(() => {
-        message.error('复制失败');
-      });
+      window.navigator.clipboard
+        .writeText(group.ruleText)
+        .then(() => {
+          message.success('规则内容已复制到剪贴板');
+        })
+        .catch(() => {
+          message.error('复制失败');
+        });
     } else {
       message.error('浏览器不支持剪贴板功能');
     }
@@ -421,212 +444,171 @@ function App() {
   if (loading) {
     return (
       <div className={containerClass}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-            fontSize: '14px',
-            color: '#666',
-          }}
-        >
-          加载中...
-        </div>
+        <div className="loading-container">加载中...</div>
       </div>
     );
   }
 
   return (
     <div className={containerClass}>
-      <Layout style={{ height: '100%' }}>
+      <div className="app-layout">
         {/* 顶部工具栏 */}
-        <Header style={{ 
-          padding: '0 16px', 
-          background: '#fff', 
-          borderBottom: '1px solid #d9d9d9',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <SettingOutlined style={{ marginRight: 8 }} />
-            <Text strong>XSwitch V3</Text>
+        <div className="app-header">
+          <div className="header-left">
+            <Space.Compact>
+              <Input
+                placeholder="输入规则组名称"
+                value={newGroupName}
+                onChange={e => setNewGroupName(e.target.value)}
+                onPressEnter={handleCreateGroup}
+                size="small"
+              />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreateGroup}
+                size="small"
+                loading={operationLoading}
+              />
+            </Space.Compact>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Text type="secondary">全局启用</Text>
+          <div className="header-right">
             <Switch
               checked={globalEnabled}
               onChange={handleGlobalEnabledChange}
               size="small"
+              unCheckedChildren="禁用"
+              checkedChildren="启用"
             />
+            <Tooltip title="标签页中打开">
+              <Button
+                type="link"
+                icon={<CodeOutlined />}
+                href="/popup.html"
+                target="_blank"
+              />
+            </Tooltip>
+
             <Tooltip title="帮助文档">
-              <Button 
-                type="text" 
-                icon={<QuestionCircleOutlined />} 
-                size="small"
-                onClick={() => window.open('https://github.com/yize/xswitch', '_blank')}
+              <Button
+                type="link"
+                icon={<QuestionCircleOutlined />}
+                onClick={() =>
+                  window.open('https://github.com/yize/xswitch', '_blank')
+                }
               />
             </Tooltip>
           </div>
-        </Header>
+        </div>
 
-        <Layout>
+        <div className="app-body">
           {/* 左侧规则组列表 */}
-          <Sider 
-            width={280} 
-            style={{ background: '#fff', borderRight: '1px solid #d9d9d9' }}
-          >
-            <div style={{ padding: '16px 16px 8px 16px' }}>
-              <Space.Compact style={{ width: '100%' }}>
-                <Input
-                  placeholder="输入规则组名称"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  onPressEnter={handleCreateGroup}
-                />
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />}
-                  onClick={handleCreateGroup}
-                  loading={operationLoading}
-                >
-                  新建
-                </Button>
-              </Space.Compact>
-            </div>
-
-            <div style={{ height: 'calc(100% - 80px)', overflow: 'auto' }}>
-              <List
-                size="small"
-                dataSource={groups}
-                renderItem={(group) => (
-                  <List.Item
-                    style={{
-                      padding: '8px 16px',
-                      cursor: 'pointer',
-                      backgroundColor: selectedGroupId === group.id ? '#e6f7ff' : 'transparent',
-                      borderLeft: selectedGroupId === group.id ? '3px solid #1890ff' : '3px solid transparent'
-                    }}
-                    onClick={() => setSelectedGroupId(group.id)}
-                    actions={[
+          <div className="app-body-sider">
+            <List
+              size="small"
+              dataSource={groups}
+              renderItem={group => (
+                <List.Item
+                  className={`group-item list-item ${
+                    selectedGroupId === group.id ? 'selected' : ''
+                  }`}
+                  onClick={() => setSelectedGroupId(group.id)}
+                  actions={[
+                    <div className="group-item-action" key="group-item-action">
+                      <Tooltip title="编辑规则组名称" key="edit">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={e => {
+                            e.stopPropagation();
+                            startEditGroupName(group);
+                          }}
+                          className="edit-button"
+                        />
+                      </Tooltip>
                       <Tooltip title="复制规则" key="copy">
                         <Button
                           type="text"
                           size="small"
                           icon={<CopyOutlined />}
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             copyGroupContent(group);
                           }}
                         />
-                      </Tooltip>,
+                      </Tooltip>
                       <Tooltip title="删除规则组" key="delete">
                         <Button
                           type="text"
                           size="small"
                           danger
                           icon={<DeleteOutlined />}
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleDeleteGroup(group.id);
                           }}
                         />
                       </Tooltip>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Checkbox
-                            checked={group.enabled}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleToggleGroupEnabled(group.id);
-                            }}
-                          />
-                          {editingGroupId === group.id ? (
-                            <Space.Compact>
-                              <Input
-                                value={editingGroupName}
-                                onChange={(e) => setEditingGroupName(e.target.value)}
-                                onPressEnter={saveGroupName}
-                                onBlur={saveGroupName}
-                                autoFocus
-                                size="small"
-                                style={{ width: 120 }}
-                              />
-                            </Space.Compact>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Text 
-                                style={{ 
-                                  fontSize: '13px',
-                                  opacity: group.enabled ? 1 : 0.6 
-                                }}
-                              >
-                                {group.groupName}
-                              </Text>
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<EditOutlined />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startEditGroupName(group);
-                                }}
-                                style={{ opacity: 0.6 }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      }
-                      description={
-                        <div>
-                          {jsonErrors[group.id] && (
-                            <Text type="danger" style={{ fontSize: '11px' }}>
-                              JSON格式错误
+                    </div>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      <div className="group-title-container">
+                        <Checkbox
+                          checked={group.enabled}
+                          onChange={e => {
+                            e.stopPropagation();
+                            handleToggleGroupEnabled(group.id);
+                          }}
+                        />
+                        {editingGroupId === group.id ? (
+                          <Space.Compact>
+                            <Input
+                              value={editingGroupName}
+                              onChange={e =>
+                                setEditingGroupName(e.target.value)
+                              }
+                              onPressEnter={saveGroupName}
+                              onBlur={saveGroupName}
+                              autoFocus
+                              size="small"
+                              className="edit-input"
+                            />
+                          </Space.Compact>
+                        ) : (
+                          <div className="group-title-edit-container">
+                            <Text
+                              className={`group-title-text ${
+                                group.enabled ? 'enabled' : 'disabled'
+                              }`}
+                            >
+                              {group.groupName}
                             </Text>
-                          )}
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            </div>
-          </Sider>
+                          </div>
+                        )}
+                      </div>
+                    }
+                    description={
+                      <div>
+                        {jsonErrors[group.id] && (
+                          <Text type="danger" className="error-text">
+                            JSON格式错误
+                          </Text>
+                        )}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </div>
 
           {/* 右侧编辑器 */}
-          <Content style={{ background: '#fff' }}>
+          <div className="app-body-editor">
             {selectedGroup ? (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* 编辑器工具栏 */}
-                <div style={{ 
-                  padding: '12px 16px', 
-                  borderBottom: '1px solid #d9d9d9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CodeOutlined />
-                    <Text strong>{selectedGroup.groupName}</Text>
-                    {saveStatus === 'saving' && (
-                      <Text type="secondary" style={{ fontSize: '12px' }}>保存中...</Text>
-                    )}
-                    {saveStatus === 'saved' && (
-                      <Text type="success" style={{ fontSize: '12px' }}>已保存</Text>
-                    )}
-                    {saveStatus === 'error' && (
-                      <Text type="danger" style={{ fontSize: '12px' }}>保存失败</Text>
-                    )}
-                  </div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    最后更新: {new Date(selectedGroup.updateTime).toLocaleString()}
-                  </Text>
-                </div>
-
+              <div className="editor-container">
                 {/* JSON格式错误提示 */}
                 {jsonErrors[selectedGroup.id] && (
                   <Alert
@@ -634,36 +616,28 @@ function App() {
                     description={jsonErrors[selectedGroup.id]}
                     type="error"
                     showIcon
-                    style={{ margin: '8px 16px' }}
+                    className="error-alert"
                   />
                 )}
-
                 {/* 代码编辑器 */}
-                <div style={{ flex: 1, margin: '0 16px 16px 16px' }}>
+                <div className="editor-wrapper">
                   <CodeMirrorEditor
                     value={editorValue}
                     onChange={handleEditorChange}
-                    placeholder="请输入JSON格式的规则配置..."
                   />
                 </div>
               </div>
             ) : (
-              <div style={{
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <CodeOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+              <div className="empty-state-container">
+                <div className="empty-state-content">
+                  <CodeOutlined className="empty-state-icon" />
                   <div>请选择或创建一个规则组</div>
                 </div>
               </div>
             )}
-          </Content>
-        </Layout>
-      </Layout>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

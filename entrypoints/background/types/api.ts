@@ -7,20 +7,20 @@ export enum ApiRequestType {
   // 规则组管理
   LOAD_GROUPS = 'LOAD_GROUPS',
   SAVE_GROUPS = 'SAVE_GROUPS',
+  SAVE_GROUP = 'SAVE_GROUP',
   CREATE_GROUP = 'CREATE_GROUP',
   UPDATE_GROUP = 'UPDATE_GROUP',
   DELETE_GROUP = 'DELETE_GROUP',
   TOGGLE_GROUP = 'TOGGLE_GROUP',
-  
+
   // 全局设置
   LOAD_GLOBAL_ENABLED = 'LOAD_GLOBAL_ENABLED',
   SAVE_GLOBAL_ENABLED = 'SAVE_GLOBAL_ENABLED',
-  
-  
+
   // 系统操作
   UPDATE_BADGE = 'UPDATE_BADGE',
   CLEAR_ALL_DATA = 'CLEAR_ALL_DATA',
-  INITIALIZE_DEFAULT_DATA = 'INITIALIZE_DEFAULT_DATA'
+  INITIALIZE_DEFAULT_DATA = 'INITIALIZE_DEFAULT_DATA',
 }
 
 /**
@@ -78,7 +78,6 @@ export interface ToggleGroupRequest {
 export interface SaveGlobalEnabledRequest {
   enabled: boolean;
 }
-
 
 /**
  * 消息发送器接口

@@ -67,6 +67,26 @@ export class RuleApi {
   }
 
   /**
+   * 保存单个规则组
+   */
+  async saveGroup(group: GroupRuleVo): Promise<RequestResult<void>> {
+    console.log('🔄 RuleApi.saveGroup:', group.id);
+    
+    const result = await this.request.send<void>({
+      type: ApiRequestType.SAVE_GROUP,
+      data: group
+    });
+    
+    if (result.success) {
+      console.log('✅ RuleApi.saveGroup success');
+    } else {
+      console.error('❌ RuleApi.saveGroup failed:', result.error);
+    }
+    
+    return result;
+  }
+
+  /**
    * 创建新规则组
    */
   async createGroup(groupName: string, ruleText?: string): Promise<RequestResult<GroupRuleVo>> {

@@ -1,5 +1,5 @@
 import { GroupRuleVo } from '../../types';
-import { validateJsonFormat, parseRuleGroup } from './json';
+import { parseRuleGroup, validateJsonFormat } from './json';
 
 interface ProxyRule {
   id: string;
@@ -32,9 +32,15 @@ const DEFAULT_CORS_CONFIG = {
 
 export class NetworkService {
   private ruleIdCounter = 1;
-  private ruleMapping = new Map<number, { source: string; target: string; name?: string }>();
+  private ruleMapping = new Map<
+    number,
+    { source: string; target: string; name?: string }
+  >();
 
-  async updateRules(groups: GroupRuleVo[], globalEnabled: boolean): Promise<void> {
+  async updateRules(
+    groups: GroupRuleVo[],
+    globalEnabled: boolean
+  ): Promise<void> {
     if (!globalEnabled) {
       await this.clearAllRules();
       return;
@@ -60,20 +66,25 @@ export class NetworkService {
         const parsedRules = parseRuleGroup(group.ruleText);
         const proxyRules = this.generateProxyRules(parsedRules.proxy || []);
         const corsRules = this.generateCorsRules(parsedRules.cors || []);
-        
+
         allRules.push(...proxyRules, ...corsRules);
       } catch (error) {
-        console.error(`Failed to parse rules for group ${group.groupName}:`, error);
+        console.error(
+          `Failed to parse rules for group ${group.groupName}:`,
+          error
+        );
       }
     }
 
     await this.applyDeclarativeRules(allRules);
   }
 
-  private generateProxyRules(proxyRules: ProxyRule[]): chrome.declarativeNetRequest.Rule[] {
+  private generateProxyRules(
+    proxyRules: ProxyRule[]
+  ): chrome.declarativeNetRequest.Rule[] {
     const rules: chrome.declarativeNetRequest.Rule[] = [];
 
-    proxyRules.forEach((rule) => {
+    proxyRules.forEach(rule => {
       if (!rule.enabled) return;
 
       try {
@@ -86,7 +97,7 @@ export class NetworkService {
           this.ruleMapping.set(ruleId, {
             source: rule.source,
             target: rule.target,
-            name: rule.name
+            name: rule.name,
           });
 
           rules.push({
@@ -94,7 +105,7 @@ export class NetworkService {
             priority: 1,
             action: {
               type: chrome.declarativeNetRequest.RuleActionType.REDIRECT,
-              redirect
+              redirect,
             },
             condition: {
               urlFilter,
@@ -110,8 +121,8 @@ export class NetworkService {
                 chrome.declarativeNetRequest.ResourceType.MEDIA,
                 chrome.declarativeNetRequest.ResourceType.WEBSOCKET,
                 chrome.declarativeNetRequest.ResourceType.OTHER,
-              ]
-            }
+              ],
+            },
           });
         }
       } catch (error) {
@@ -122,10 +133,12 @@ export class NetworkService {
     return rules;
   }
 
-  private generateCorsRules(corsRules: CorsRule[]): chrome.declarativeNetRequest.Rule[] {
+  private generateCorsRules(
+    corsRules: CorsRule[]
+  ): chrome.declarativeNetRequest.Rule[] {
     const rules: chrome.declarativeNetRequest.Rule[] = [];
 
-    corsRules.forEach((rule) => {
+    corsRules.forEach(rule => {
       if (!rule.enabled) return;
 
       try {
@@ -140,29 +153,31 @@ export class NetworkService {
                 {
                   header: CORS_HEADERS.ORIGIN,
                   operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                  value: DEFAULT_CORS_CONFIG.origin
+                  value: DEFAULT_CORS_CONFIG.origin,
                 },
                 {
                   header: CORS_HEADERS.CREDENTIALS,
                   operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                  value: DEFAULT_CORS_CONFIG.credentials
+                  value: DEFAULT_CORS_CONFIG.credentials,
                 },
                 {
                   header: CORS_HEADERS.METHODS,
                   operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                  value: DEFAULT_CORS_CONFIG.methods
+                  value: DEFAULT_CORS_CONFIG.methods,
                 },
                 {
                   header: CORS_HEADERS.HEADERS,
                   operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                  value: DEFAULT_CORS_CONFIG.headers
-                }
-              ]
+                  value: DEFAULT_CORS_CONFIG.headers,
+                },
+              ],
             },
             condition: {
               urlFilter,
-              resourceTypes: [chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST]
-            }
+              resourceTypes: [
+                chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
+              ],
+            },
           });
         }
       } catch (error) {
@@ -185,7 +200,9 @@ export class NetworkService {
           return `*://${domain}/*`;
         }
 
-        const simplePattern = source.replace(/^\(\.\*/, '').replace(/\.\*\)$/, '');
+        const simplePattern = source
+          .replace(/^\(\.\*/, '')
+          .replace(/\.\*\)$/, '');
         if (simplePattern) {
           console.log('Extracted pattern from regex:', simplePattern);
           return `*://*${simplePattern}*`;
@@ -196,7 +213,11 @@ export class NetworkService {
 
       if (source.includes('://')) {
         let urlFilter = source.replace(/^https?/, '*');
-        if (!urlFilter.endsWith('/') && !urlFilter.includes('*') && !this.isFileExtension(urlFilter)) {
+        if (
+          !urlFilter.endsWith('/') &&
+          !urlFilter.includes('*') &&
+          !this.isFileExtension(urlFilter)
+        ) {
           urlFilter += '*';
         }
         console.log('Generated URL filter from full URL:', urlFilter);
@@ -218,7 +239,10 @@ export class NetworkService {
     }
   }
 
-  private convertToRedirect(source: string, target: string): chrome.declarativeNetRequest.Redirect | undefined {
+  private convertToRedirect(
+    source: string,
+    target: string
+  ): chrome.declarativeNetRequest.Redirect | undefined {
     try {
       console.log('Converting redirect - source:', source, 'target:', target);
 
@@ -235,14 +259,21 @@ export class NetworkService {
 
       if (source.startsWith('(.*') && target.includes('$1')) {
         try {
-          const regexPattern = source.replace(/^\(\.\*/, '(.*)').replace(/\.\*\)$/, '(.*)');
-          console.log('Attempting regex substitution with pattern:', regexPattern);
+          const regexPattern = source
+            .replace(/^\(\.\*/, '(.*)')
+            .replace(/\.\*\)$/, '(.*)');
+          console.log(
+            'Attempting regex substitution with pattern:',
+            regexPattern
+          );
 
           return {
-            regexSubstitution: target.replace(/\$1/g, '\\1')
+            regexSubstitution: target.replace(/\$1/g, '\\1'),
           };
         } catch {
-          console.log('Regex substitution failed, falling back to simple redirect');
+          console.log(
+            'Regex substitution failed, falling back to simple redirect'
+          );
           return { url: target };
         }
       }
@@ -262,30 +293,49 @@ export class NetworkService {
   }
 
   private isFileExtension(url: string): boolean {
-    const fileExtensions = ['.js', '.css', '.html', '.json', '.xml', '.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot'];
+    const fileExtensions = [
+      '.js',
+      '.css',
+      '.html',
+      '.json',
+      '.xml',
+      '.txt',
+      '.pdf',
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.svg',
+      '.woff',
+      '.woff2',
+      '.ttf',
+      '.eot',
+    ];
     return fileExtensions.some(ext => url.toLowerCase().endsWith(ext));
   }
 
-  private async applyDeclarativeRules(rules: chrome.declarativeNetRequest.Rule[]): Promise<void> {
+  private async applyDeclarativeRules(
+    rules: chrome.declarativeNetRequest.Rule[]
+  ): Promise<void> {
     try {
       console.log('🔄 Applying declarative rules...');
       console.log('Rules to apply:', JSON.stringify(rules, null, 2));
 
-      const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+      const existingRules =
+        await chrome.declarativeNetRequest.getDynamicRules();
       const ruleIdsToRemove = existingRules.map(rule => rule.id);
 
       console.log('Removing existing rules:', ruleIdsToRemove);
 
       await chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: ruleIdsToRemove,
-        addRules: rules
+        addRules: rules,
       });
 
       console.log(`✅ Successfully applied ${rules.length} declarative rules`);
 
       const newRules = await chrome.declarativeNetRequest.getDynamicRules();
       console.log('Active rules after update:', newRules.length);
-
     } catch (error) {
       console.error('❌ Failed to apply declarative rules:', error);
       if (error instanceof Error) {
@@ -296,11 +346,12 @@ export class NetworkService {
 
   private async clearAllRules(): Promise<void> {
     try {
-      const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+      const existingRules =
+        await chrome.declarativeNetRequest.getDynamicRules();
       const ruleIdsToRemove = existingRules.map(rule => rule.id);
 
       await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: ruleIdsToRemove
+        removeRuleIds: ruleIdsToRemove,
       });
 
       console.log('Cleared all rules');
@@ -313,7 +364,7 @@ export class NetworkService {
     if (typeof chrome === 'undefined' || !chrome.webRequest) return;
 
     chrome.webRequest.onBeforeRequest.addListener(
-      (details) => {
+      (details: chrome.webRequest.WebRequestBodyDetails) => {
         this.logProxyHit(details, globalEnabled, groups);
       },
       { urls: ['<all_urls>'] },
@@ -321,14 +372,18 @@ export class NetworkService {
     );
 
     chrome.webRequest.onCompleted.addListener(
-      (details) => {
+      details => {
         this.logRequestCompleted(details, globalEnabled, groups);
       },
       { urls: ['<all_urls>'] }
     );
   }
 
-  private logProxyHit(details: chrome.webRequest.WebRequestBodyDetails, globalEnabled: boolean, groups: GroupRuleVo[]): void {
+  private logProxyHit(
+    details: chrome.webRequest.WebRequestDetails,
+    globalEnabled: boolean,
+    groups: GroupRuleVo[]
+  ): void {
     if (!globalEnabled) {
       console.log(`🔍 [XSwitch V3] Skip - Global disabled: ${details.url}`);
       return;
@@ -343,7 +398,7 @@ export class NetworkService {
     console.log(`🔍 [XSwitch V3] Checking: ${details.url} (${details.type})`);
 
     let hasMatch = false;
-    enabledGroups.forEach((group) => {
+    enabledGroups.forEach(group => {
       const validation = validateJsonFormat(group.ruleText);
       if (!validation.isValid) return;
 
@@ -353,14 +408,20 @@ export class NetworkService {
 
         proxyRules.forEach((rule, index) => {
           if (!rule.enabled) {
-            console.log(`  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - DISABLED`);
+            console.log(
+              `  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - DISABLED`
+            );
             return;
           }
 
           const isMatched = this.isUrlMatched(details.url, rule.source);
           if (isMatched) {
             hasMatch = true;
-            const targetUrl = this.getTargetUrl(details.url, rule.source, rule.target);
+            const targetUrl = this.getTargetUrl(
+              details.url,
+              rule.source,
+              rule.target
+            );
 
             console.group(`✅ [XSwitch V3] MATCH - Rule ${index + 1}`);
             console.log(`📥 Original: ${details.url}`);
@@ -375,26 +436,33 @@ export class NetworkService {
             console.groupEnd();
 
             if (details.tabId && details.tabId !== -1) {
-              chrome.tabs.sendMessage(details.tabId, {
-                type: 'PROXY_HIT',
-                data: {
-                  originalUrl: details.url,
-                  targetUrl: targetUrl,
-                  ruleName: rule.name || '未命名规则',
-                  requestType: details.type,
-                  method: details.method || 'GET',
-                  timestamp: Date.now()
-                }
-              }).catch(() => {
-                // 忽略错误，可能没有content script
-              });
+              chrome.tabs
+                .sendMessage(details.tabId, {
+                  type: 'PROXY_HIT',
+                  data: {
+                    originalUrl: details.url,
+                    targetUrl: targetUrl,
+                    ruleName: rule.name || '未命名规则',
+                    requestType: details.type,
+                    method: details.method || 'GET',
+                    timestamp: Date.now(),
+                  },
+                })
+                .catch(() => {
+                  // 忽略错误，可能没有content script
+                });
             }
           } else {
-            console.log(`  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - NO MATCH: ${rule.source}`);
+            console.log(
+              `  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - NO MATCH: ${rule.source}`
+            );
           }
         });
       } catch (error) {
-        console.error(`Failed to parse rules for group ${group.groupName}:`, error);
+        console.error(
+          `Failed to parse rules for group ${group.groupName}:`,
+          error
+        );
       }
     });
 
@@ -403,13 +471,20 @@ export class NetworkService {
     }
   }
 
-  private logRequestCompleted(details: chrome.webRequest.WebRequestDetails & { statusCode?: number }, globalEnabled: boolean, groups: GroupRuleVo[]): void {
-    if (details.statusCode && (details.statusCode < 200 || details.statusCode >= 400)) {
+  private logRequestCompleted(
+    details: chrome.webRequest.WebRequestDetails & { statusCode?: number },
+    globalEnabled: boolean,
+    groups: GroupRuleVo[]
+  ): void {
+    if (
+      details.statusCode &&
+      (details.statusCode < 200 || details.statusCode >= 400)
+    ) {
       const enabledGroups = groups.filter(group => group.enabled);
       if (enabledGroups.length === 0) return;
 
       let hasMatchedRule = false;
-      enabledGroups.forEach((group) => {
+      enabledGroups.forEach(group => {
         const validation = validateJsonFormat(group.ruleText);
         if (!validation.isValid) return;
 
@@ -426,12 +501,17 @@ export class NetworkService {
             hasMatchedRule = true;
           }
         } catch (error) {
-          console.error(`Failed to check rules for group ${group.groupName}:`, error);
+          console.error(
+            `Failed to check rules for group ${group.groupName}:`,
+            error
+          );
         }
       });
 
       if (hasMatchedRule) {
-        console.warn(`⚠️ [XSwitch V3] 代理请求失败 - 状态码: ${details.statusCode}, URL: ${details.url}`);
+        console.warn(
+          `⚠️ [XSwitch V3] 代理请求失败 - 状态码: ${details.statusCode}, URL: ${details.url}`
+        );
       }
     }
   }
@@ -439,8 +519,12 @@ export class NetworkService {
   private isUrlMatched(url: string, pattern: string): boolean {
     try {
       // 检查是否为正则表达式模式
-      const isRegexPattern = pattern.includes('(.') || pattern.includes('.*') || pattern.includes('$') || pattern.includes('^');
-      
+      const isRegexPattern =
+        pattern.includes('(.') ||
+        pattern.includes('.*') ||
+        pattern.includes('$') ||
+        pattern.includes('^');
+
       if (isRegexPattern) {
         // 正则表达式匹配
         try {
@@ -460,11 +544,19 @@ export class NetworkService {
     }
   }
 
-  private getTargetUrl(originalUrl: string, sourcePattern: string, target: string): string {
+  private getTargetUrl(
+    originalUrl: string,
+    sourcePattern: string,
+    target: string
+  ): string {
     try {
       // 检查是否为正则表达式模式
-      const isRegexPattern = sourcePattern.includes('(.') || sourcePattern.includes('.*') || sourcePattern.includes('$') || sourcePattern.includes('^');
-      
+      const isRegexPattern =
+        sourcePattern.includes('(.') ||
+        sourcePattern.includes('.*') ||
+        sourcePattern.includes('$') ||
+        sourcePattern.includes('^');
+
       if (isRegexPattern) {
         try {
           const regex = new RegExp(sourcePattern.replace('??', '\\?\\?'), 'i');

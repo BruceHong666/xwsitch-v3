@@ -229,14 +229,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   return (
     <div
       ref={editorRef}
-      style={{
-        width: '100%',
-        height: height,
-        border: '1px solid #d9d9d9',
-        borderRadius: '6px',
-        overflow: 'hidden',
-        backgroundColor: theme === 'dark' ? '#282c34' : '#ffffff',
-      }}
+      className={`code-mirror-container ${theme}`}
+      style={{ height: height }}
     />
   );
 };

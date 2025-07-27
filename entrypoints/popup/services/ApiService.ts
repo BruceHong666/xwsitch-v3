@@ -1,14 +1,14 @@
 import { GroupRuleVo } from '../../../types';
-import { 
-  ApiRequest, 
-  ApiResponse, 
-  ApiRequestType, 
-  MessageSender,
+import {
+  ApiRequest,
+  ApiRequestType,
+  ApiResponse,
   CreateGroupRequest,
-  UpdateGroupRequest,
   DeleteGroupRequest,
+  MessageSender,
+  SaveGlobalEnabledRequest,
   ToggleGroupRequest,
-  SaveGlobalEnabledRequest
+  UpdateGroupRequest,
 } from '../../background/types/api';
 
 /**
@@ -32,23 +32,29 @@ export class ApiService implements MessageSender {
    */
   async sendMessage<T = any>(request: ApiRequest): Promise<ApiResponse<T>> {
     console.log('📤 ApiService.sendMessage:', request.type, request.data);
-    
+
     try {
-      const response = await browser.runtime.sendMessage(request) as ApiResponse<T>;
-      
+      const response = (await browser.runtime.sendMessage(
+        request
+      )) as ApiResponse<T>;
+
       if (response.success) {
         console.log('✅ ApiService.sendMessage success:', request.type);
       } else {
-        console.error('❌ ApiService.sendMessage failed:', request.type, response.error);
+        console.error(
+          '❌ ApiService.sendMessage failed:',
+          request.type,
+          response.error
+        );
       }
-      
+
       return response;
     } catch (error) {
       console.error('❌ ApiService.sendMessage error:', request.type, error);
-      
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : '通信失败'
+        error: error instanceof Error ? error.message : '通信失败',
       };
     }
   }
@@ -60,13 +66,13 @@ export class ApiService implements MessageSender {
    */
   async loadGroups(): Promise<GroupRuleVo[]> {
     const response = await this.sendMessage<GroupRuleVo[]>({
-      type: ApiRequestType.LOAD_GROUPS
+      type: ApiRequestType.LOAD_GROUPS,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '加载规则组失败');
     }
-    
+
     return response.data || [];
   }
 
@@ -76,9 +82,23 @@ export class ApiService implements MessageSender {
   async saveGroups(groups: GroupRuleVo[]): Promise<void> {
     const response = await this.sendMessage({
       type: ApiRequestType.SAVE_GROUPS,
-      data: groups
+      data: groups,
     });
-    
+
+    if (!response.success) {
+      throw new Error(response.error || '保存规则组失败');
+    }
+  }
+
+  /**
+   * 保存单个规则组
+   */
+  async saveGroup(group: GroupRuleVo): Promise<void> {
+    const response = await this.sendMessage({
+      type: ApiRequestType.SAVE_GROUP,
+      data: group,
+    });
+
     if (!response.success) {
       throw new Error(response.error || '保存规则组失败');
     }
@@ -87,32 +107,38 @@ export class ApiService implements MessageSender {
   /**
    * 创建新规则组
    */
-  async createGroup(groupName: string, ruleText?: string): Promise<GroupRuleVo> {
+  async createGroup(
+    groupName: string,
+    ruleText?: string
+  ): Promise<GroupRuleVo> {
     const request: CreateGroupRequest = { groupName, ruleText };
-    
+
     const response = await this.sendMessage<GroupRuleVo>({
       type: ApiRequestType.CREATE_GROUP,
-      data: request
+      data: request,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '创建规则组失败');
     }
-    
+
     return response.data!;
   }
 
   /**
    * 更新规则组
    */
-  async updateGroup(groupId: string, updates: Partial<GroupRuleVo>): Promise<void> {
+  async updateGroup(
+    groupId: string,
+    updates: Partial<GroupRuleVo>
+  ): Promise<void> {
     const request: UpdateGroupRequest = { groupId, updates };
-    
+
     const response = await this.sendMessage({
       type: ApiRequestType.UPDATE_GROUP,
-      data: request
+      data: request,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '更新规则组失败');
     }
@@ -123,12 +149,12 @@ export class ApiService implements MessageSender {
    */
   async deleteGroup(groupId: string): Promise<void> {
     const request: DeleteGroupRequest = { groupId };
-    
+
     const response = await this.sendMessage({
       type: ApiRequestType.DELETE_GROUP,
-      data: request
+      data: request,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '删除规则组失败');
     }
@@ -139,16 +165,16 @@ export class ApiService implements MessageSender {
    */
   async toggleGroup(groupId: string): Promise<boolean> {
     const request: ToggleGroupRequest = { groupId };
-    
+
     const response = await this.sendMessage<{ enabled: boolean }>({
       type: ApiRequestType.TOGGLE_GROUP,
-      data: request
+      data: request,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '切换规则组状态失败');
     }
-    
+
     return response.data!.enabled;
   }
 
@@ -159,13 +185,13 @@ export class ApiService implements MessageSender {
    */
   async loadGlobalEnabled(): Promise<boolean> {
     const response = await this.sendMessage<boolean>({
-      type: ApiRequestType.LOAD_GLOBAL_ENABLED
+      type: ApiRequestType.LOAD_GLOBAL_ENABLED,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '加载全局状态失败');
     }
-    
+
     return response.data!;
   }
 
@@ -174,17 +200,16 @@ export class ApiService implements MessageSender {
    */
   async saveGlobalEnabled(enabled: boolean): Promise<void> {
     const request: SaveGlobalEnabledRequest = { enabled };
-    
+
     const response = await this.sendMessage({
       type: ApiRequestType.SAVE_GLOBAL_ENABLED,
-      data: request
+      data: request,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '保存全局状态失败');
     }
   }
-
 
   // ==================== 系统操作 API ====================
 
@@ -193,9 +218,9 @@ export class ApiService implements MessageSender {
    */
   async updateBadge(): Promise<void> {
     const response = await this.sendMessage({
-      type: ApiRequestType.UPDATE_BADGE
+      type: ApiRequestType.UPDATE_BADGE,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '更新徽章失败');
     }
@@ -206,9 +231,9 @@ export class ApiService implements MessageSender {
    */
   async clearAllData(): Promise<void> {
     const response = await this.sendMessage({
-      type: ApiRequestType.CLEAR_ALL_DATA
+      type: ApiRequestType.CLEAR_ALL_DATA,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '清除数据失败');
     }
@@ -219,9 +244,9 @@ export class ApiService implements MessageSender {
    */
   async initializeDefaultData(): Promise<void> {
     const response = await this.sendMessage({
-      type: ApiRequestType.INITIALIZE_DEFAULT_DATA
+      type: ApiRequestType.INITIALIZE_DEFAULT_DATA,
     });
-    
+
     if (!response.success) {
       throw new Error(response.error || '初始化默认数据失败');
     }

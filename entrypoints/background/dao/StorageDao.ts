@@ -168,6 +168,23 @@ export class StorageDao {
   }
 
   /**
+   * 保存单个规则组
+   */
+  async saveGroup(group: GroupRuleVo): Promise<void> {
+    console.log('💾 StorageDao.saveGroup:', group.id);
+    const groups = await this.loadGroups();
+    const index = groups.findIndex(g => g.id === group.id);
+    
+    if (index >= 0) {
+      groups[index] = group;
+    } else {
+      groups.push(group);
+    }
+    
+    await this.saveGroups(groups);
+  }
+
+  /**
    * 加载规则组列表
    */
   async loadGroups(): Promise<GroupRuleVo[]> {

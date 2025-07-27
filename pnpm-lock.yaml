@@ -58,6 +58,9 @@ dependencies:
     version: 19.1.0(react@19.1.0)
 
 devDependencies:
+  '@types/chrome':
+    specifier: ^0.1.1
+    version: 0.1.1
   '@types/react':
     specifier: ^19.1.2
     version: 19.1.8
@@ -1450,6 +1453,13 @@ packages:
     resolution: {integrity: sha512-8kB30R7Hwqf40JPiKhVzodJs2Qc1ZJ5zuT3uzw5Hq/dhNCl3G3l83jfpdI1e20BP348+fV7VIL/+FxaXkqBmWg==}
     dependencies:
       '@types/deep-eql': 4.0.2
+    dev: true
+
+  /@types/chrome@0.1.1:
+    resolution: {integrity: sha512-MLtFW++/n+OPQIaf5hA6pmURd3Zn+OxuvASyf2mYh8B8pHDpbhHjwlVHMw3H/aJC9Z7Z3itO0AFaZeegrGk0yA==}
+    dependencies:
+      '@types/filesystem': 0.0.36
+      '@types/har-format': 1.2.16
     dev: true
 
   /@types/deep-eql@4.0.2:

@@ -52,6 +52,10 @@ export class MessageController implements MessageHandler {
           result = await this.handleSaveGroups(request.data);
           break;
 
+        case ApiRequestType.SAVE_GROUP:
+          result = await this.handleSaveGroup(request.data);
+          break;
+
         case ApiRequestType.CREATE_GROUP:
           result = await this.handleCreateGroup(request.data);
           break;
@@ -129,6 +133,17 @@ export class MessageController implements MessageHandler {
       throw new Error('规则组数据必须是数组格式');
     }
     await this.ruleService.saveGroups(data);
+    return { success: true };
+  }
+
+  /**
+   * 处理保存单个规则组请求
+   */
+  private async handleSaveGroup(data: any) {
+    if (!data || !data.id) {
+      throw new Error('规则组数据和ID不能为空');
+    }
+    await this.ruleService.saveGroup(data);
     return { success: true };
   }
 

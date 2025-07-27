@@ -1,9 +1,46 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { compatStorage } from '../../utils/storage';
+import { StorageDao } from '../../entrypoints/background/dao/StorageDao';
 import { NetworkService } from '../../entrypoints/utils/network';
 import { parseRuleGroup, countActiveRules } from '../../entrypoints/utils/json';
 import { setupTestEnvironment, cleanupTestEnvironment, createTestGroup, triggerStorageChange } from '../utils/testUtils';
 import { testRuleConfigs } from '../fixtures/configs';
+import { GroupRuleVo } from '../../types';
+
+// 创建兼容存储接口
+const compatStorage = {
+  async saveGroups(groups: GroupRuleVo[]) {
+    const storage = StorageDao.getInstance();
+    await storage.saveGroups(groups);
+    return { success: true };
+  },
+  
+  async loadGroups(): Promise<GroupRuleVo[]> {
+    const storage = StorageDao.getInstance();
+    return await storage.loadGroups();
+  },
+  
+  async saveGroup(group: GroupRuleVo) {
+    const storage = StorageDao.getInstance();
+    await storage.saveGroup(group);
+    return { success: true };
+  },
+  
+  async saveGlobalEnabled(enabled: boolean) {
+    const storage = StorageDao.getInstance();
+    await storage.saveGlobalEnabled(enabled);
+    return { success: true };
+  },
+  
+  async loadGlobalEnabled(): Promise<boolean> {
+    const storage = StorageDao.getInstance();
+    return await storage.loadGlobalEnabled();
+  },
+  
+  onStorageChanged(callback: (changes: any) => void): void {
+    const storage = StorageDao.getInstance();
+    storage.onStorageChanged(callback);
+  }
+};
 
 /**
  * 端到端集成测试
@@ -303,20 +340,29 @@ describe('End-to-End Integration Tests', () => {
   describe('用户场景模拟', () => {
     it('应该模拟用户创建和管理规则的完整流程', async () => {
       // 1. 用户创建新的规则组
-      const storage = await import('../../utils/storage').then(m => m.enhancedStorage);
-      const newGroup = await storage.createGroup('用户测试组', JSON.stringify({
-        proxy: [
-          {
-            id: 'user-rule-1',
-            name: '用户规则1',
-            enabled: true,
-            source: 'api.user-test.com',
-            target: 'localhost:3000',
-            type: 'string'
-          }
-        ],
-        cors: []
-      }));
+      const storage = StorageDao.getInstance();
+      const newGroup: GroupRuleVo = {
+        id: Date.now().toString(),
+        groupName: '用户测试组',
+        enabled: true,
+        ruleText: JSON.stringify({
+          proxy: [
+            {
+              id: 'user-rule-1',
+              name: '用户规则1',
+              enabled: true,
+              source: 'api.user-test.com',
+              target: 'localhost:3000',
+              type: 'string'
+            }
+          ],
+          cors: []
+        }),
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString()
+      };
+      
+      await storage.saveGroup(newGroup);
 
       expect(newGroup.groupName).toBe('用户测试组');
       expect(newGroup.enabled).toBe(true);
@@ -349,7 +395,8 @@ describe('End-to-End Integration Tests', () => {
       await storage.saveGroup(updatedGroup);
 
       // 3. 验证修改结果
-      const savedGroup = await storage.getGroup(newGroup.id);
+      const allGroups = await storage.loadGroups();
+      const savedGroup = allGroups.find(g => g.id === newGroup.id);
       expect(savedGroup?.groupName).toBe('修改后的组名');
 
       const parsedRules = parseRuleGroup(savedGroup!.ruleText);
@@ -357,13 +404,21 @@ describe('End-to-End Integration Tests', () => {
       expect(parsedRules.cors).toHaveLength(1);
 
       // 4. 用户启用/禁用规则组
-      const toggleResult = await storage.toggleGroupEnabled(newGroup.id);
-      expect(toggleResult).toBe(false); // 应该变为禁用
+      const toggledGroup = { ...savedGroup!, enabled: !savedGroup!.enabled, updateTime: new Date().toISOString() };
+      await storage.saveGroup(toggledGroup);
+      
+      const toggledGroups = await storage.loadGroups();
+      const finalGroup = toggledGroups.find(g => g.id === newGroup.id);
+      expect(finalGroup?.enabled).toBe(false); // 应该变为禁用
 
       // 5. 用户删除规则组
-      await storage.deleteGroup(newGroup.id);
-      const deletedGroup = await storage.getGroup(newGroup.id);
-      expect(deletedGroup).toBeNull();
+      const groupsBeforeDelete = await storage.loadGroups();
+      const filteredGroups = groupsBeforeDelete.filter(g => g.id !== newGroup.id);
+      await storage.saveGroups(filteredGroups);
+      
+      const groupsAfterDelete = await storage.loadGroups();
+      const deletedGroup = groupsAfterDelete.find(g => g.id === newGroup.id);
+      expect(deletedGroup).toBeUndefined();
     });
 
     it('应该模拟多用户环境下的数据隔离', async () => {

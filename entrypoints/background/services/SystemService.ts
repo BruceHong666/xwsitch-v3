@@ -1,8 +1,8 @@
 import { GroupRuleVo } from '../../../types';
+import { countActiveRules, validateJsonFormat } from '../../utils/json';
+import { networkService } from '../../utils/network';
 import { StorageDao } from '../dao/StorageDao';
 import { RuleService } from './RuleService';
-import { validateJsonFormat, countActiveRules } from '../../utils/json';
-import { networkService } from '../../utils/network';
 
 /**
  * 系统服务 - 负责全局设置、徽章管理等系统级功能
@@ -64,11 +64,14 @@ export class SystemService {
         this.loadGlobalEnabled(),
       ]);
 
-      console.log('📊 Badge update data:', JSON.stringify({ 
-        groups: groups.length, 
-        globalEnabled,
-        enabledGroups: groups.filter(g => g.enabled).length 
-      }));
+      console.log(
+        '📊 Badge update data:',
+        JSON.stringify({
+          groups: groups.length,
+          globalEnabled,
+          enabledGroups: groups.filter(g => g.enabled).length,
+        })
+      );
 
       if (!globalEnabled) {
         console.log('🔴 Setting badge to OFF (global disabled)');
@@ -105,15 +108,18 @@ export class SystemService {
         this.loadGlobalEnabled(),
       ]);
 
-      console.log('📊 Network rules update data:', JSON.stringify({
-        groups: groups.length,
-        globalEnabled,
-        enabledGroups: groups.filter(g => g.enabled).length,
-      }));
+      console.log(
+        '📊 Network rules update data:',
+        JSON.stringify({
+          groups: groups.length,
+          globalEnabled,
+          enabledGroups: groups.filter(g => g.enabled).length,
+        })
+      );
 
       await networkService.updateRules(groups, globalEnabled);
       networkService.setupNetworkLogging(globalEnabled, groups);
-      
+
       console.log('✅ SystemService.updateNetworkRules success');
     } catch (error) {
       console.error('❌ SystemService.updateNetworkRules failed:', error);
@@ -129,12 +135,9 @@ export class SystemService {
     try {
       // 初始化默认数据
       await this.ruleService.initializeDefaultData();
-      
+
       // 更新网络规则和徽章
-      await Promise.all([
-        this.updateNetworkRules(),
-        this.updateBadge()
-      ]);
+      await Promise.all([this.updateNetworkRules(), this.updateBadge()]);
 
       console.log('✅ SystemService.initialize success');
     } catch (error) {
@@ -148,16 +151,18 @@ export class SystemService {
    */
   setupStorageListener(): void {
     console.log('👂 SystemService.setupStorageListener');
-    this.storageDao.onStorageChanged((changes) => {
-      console.log('📦 Storage changed, updating badge and network rules:', JSON.stringify(changes));
-      
+    this.storageDao.onStorageChanged(changes => {
+      console.log(
+        '📦 Storage changed, updating badge and network rules:',
+        JSON.stringify(changes)
+      );
+
       // 异步更新，避免阻塞
-      Promise.all([
-        this.updateBadge(),
-        this.updateNetworkRules()
-      ]).catch(error => {
-        console.error('❌ Error updating after storage change:', error);
-      });
+      Promise.all([this.updateBadge(), this.updateNetworkRules()]).catch(
+        error => {
+          console.error('❌ Error updating after storage change:', error);
+        }
+      );
     });
   }
 

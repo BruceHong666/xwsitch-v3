@@ -52,6 +52,22 @@ export class RuleService {
   }
 
   /**
+   * 保存单个规则组
+   */
+  async saveGroup(group: GroupRuleVo): Promise<void> {
+    console.log('🔄 RuleService.saveGroup:', group.id);
+    try {
+      // 验证单个规则组数据
+      this.validateGroup(group);
+      await this.storageDao.saveGroup(group);
+      console.log('✅ RuleService.saveGroup success');
+    } catch (error) {
+      console.error('❌ RuleService.saveGroup failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 创建新规则组
    */
   async createGroup(groupName: string, ruleText: string = DEFAULT_NEW_RULE): Promise<GroupRuleVo> {
@@ -109,13 +125,13 @@ export class RuleService {
       }
 
       // 更新规则组
-      groups[groupIndex] = {
+      const updatedGroup = {
         ...groups[groupIndex],
         ...updates,
         updateTime: new Date().toISOString(),
       };
 
-      await this.saveGroups(groups);
+      await this.saveGroup(updatedGroup);
       console.log('✅ RuleService.updateGroup success');
     } catch (error) {
       console.error('❌ RuleService.updateGroup failed:', error);
@@ -227,6 +243,23 @@ export class RuleService {
   }
 
   /**
+   * 验证单个规则组数据
+   */
+  private validateGroup(group: GroupRuleVo): void {
+    if (!group.id || !group.groupName) {
+      throw new Error('规则组数据格式不正确：缺少必要字段');
+    }
+
+    if (typeof group.enabled !== 'boolean') {
+      throw new Error('规则组启用状态必须是布尔值');
+    }
+
+    if (typeof group.ruleText !== 'string') {
+      throw new Error('规则组内容必须是字符串');
+    }
+  }
+
+  /**
    * 验证规则组数据
    */
   private validateGroups(groups: GroupRuleVo[]): void {
@@ -235,17 +268,7 @@ export class RuleService {
     }
 
     for (const group of groups) {
-      if (!group.id || !group.groupName) {
-        throw new Error('规则组数据格式不正确：缺少必要字段');
-      }
-
-      if (typeof group.enabled !== 'boolean') {
-        throw new Error('规则组启用状态必须是布尔值');
-      }
-
-      if (typeof group.ruleText !== 'string') {
-        throw new Error('规则组内容必须是字符串');
-      }
+      this.validateGroup(group);
     }
 
     // 检查ID重复

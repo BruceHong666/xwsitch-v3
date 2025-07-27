@@ -7,3 +7,178 @@
   min-height: 100vh;
   width: 100vw;
 }
+
+.group-item {
+  position: relative;
+}
+
+.group-item:hover .group-item-action {
+  display: block;
+}
+
+.group-item-action {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 80px;
+  display: none;
+}
+
+/* Loading container */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Layout styles */
+.app-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header styles */
+.app-header {
+  padding: 0 8px;
+  background: #fff;
+  border-bottom: 1px solid #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+}
+.app-body {
+  flex: 1;
+  display: flex;
+}
+.app-body-sider {
+  width: 200px;
+  border-right: 1px solid #d9d9d9;
+}
+.app-body-editor {
+  flex: 1;
+  padding: 2px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Sider styles */
+.app-sider {
+  background: #fff;
+  border-right: 1px solid #d9d9d9;
+}
+
+.sider-content {
+  height: calc(100% - 80px);
+  overflow: auto;
+}
+
+/* List item styles */
+.list-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: transparent;
+  border-left: 3px solid transparent;
+}
+
+.list-item.selected {
+  background-color: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.edit-button {
+  opacity: 0.6;
+}
+
+.edit-input {
+  width: 120px;
+}
+
+/* Group title styles */
+.group-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-title-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-title-text {
+  font-size: 13px;
+}
+
+.group-title-text.enabled {
+  opacity: 1;
+}
+
+.group-title-text.disabled {
+  opacity: 0.6;
+}
+
+.error-text {
+  font-size: 11px;
+}
+
+.editor-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-wrapper {
+  flex: 1;
+}
+
+.error-alert {
+  margin: 8px 16px;
+}
+
+/* Empty state styles */
+.empty-state-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.empty-state-content {
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+/* CodeMirror editor styles */
+.code-mirror-container {
+  width: 100%;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.code-mirror-container.dark {
+  background-color: #282c34;
+}
+
+.code-mirror-container.light {
+  background-color: #ffffff;
+}
