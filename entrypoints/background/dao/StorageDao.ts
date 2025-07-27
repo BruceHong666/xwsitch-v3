@@ -189,10 +189,15 @@ export class StorageDao {
    */
   async loadGroups(): Promise<GroupRuleVo[]> {
     console.log('📖 StorageDao.loadGroups');
-    const result = await this.storageAPI.get([STORAGE_KEY]);
-    const groups = result[STORAGE_KEY] || [];
-    console.log('📖 StorageDao.loadGroups result:', groups.length);
-    return groups;
+    try {
+      const result = await this.storageAPI.get([STORAGE_KEY]);
+      const groups = result[STORAGE_KEY] || [];
+      console.log('📖 StorageDao.loadGroups result:', groups.length);
+      return groups;
+    } catch (error) {
+      console.error('❌ StorageDao.loadGroups failed:', error);
+      return []; // 返回空数组而不是抛出错误
+    }
   }
 
   /**

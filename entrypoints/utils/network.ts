@@ -352,6 +352,7 @@ export class NetworkService {
 
       await chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: ruleIdsToRemove,
+        addRules: [],
       });
 
       console.log('Cleared all rules');
@@ -520,15 +521,20 @@ export class NetworkService {
     try {
       // 检查是否为正则表达式模式
       const isRegexPattern =
-        pattern.includes('(.') ||
+        pattern.includes('(') ||
         pattern.includes('.*') ||
         pattern.includes('$') ||
-        pattern.includes('^');
+        pattern.includes('^') ||
+        pattern.includes('[') ||
+        pattern.includes(']') ||
+        pattern.includes('+') ||
+        pattern.includes('?') ||
+        pattern.includes('|');
 
       if (isRegexPattern) {
         // 正则表达式匹配
         try {
-          const regex = new RegExp(pattern.replace('??', '\\?\\?'), 'i');
+          const regex = new RegExp(pattern, 'i');
           return regex.test(url);
         } catch (error) {
           console.error('Invalid regex pattern:', pattern, error);
@@ -552,14 +558,19 @@ export class NetworkService {
     try {
       // 检查是否为正则表达式模式
       const isRegexPattern =
-        sourcePattern.includes('(.') ||
+        sourcePattern.includes('(') ||
         sourcePattern.includes('.*') ||
         sourcePattern.includes('$') ||
-        sourcePattern.includes('^');
+        sourcePattern.includes('^') ||
+        sourcePattern.includes('[') ||
+        sourcePattern.includes(']') ||
+        sourcePattern.includes('+') ||
+        sourcePattern.includes('?') ||
+        sourcePattern.includes('|');
 
       if (isRegexPattern) {
         try {
-          const regex = new RegExp(sourcePattern.replace('??', '\\?\\?'), 'i');
+          const regex = new RegExp(sourcePattern, 'i');
           return originalUrl.replace(regex, target);
         } catch (error) {
           console.error('Error applying regex replacement:', error);
