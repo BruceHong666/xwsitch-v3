@@ -1,48 +1,55 @@
 # Switch V3
 
-## 🙏 致谢与说明
-
-**向经典致敬**：本项目深受 [xswitch](https://github.com/yize/xswitch) 启发，感谢原作者 [@yize](https://github.com/yize) 为开发者社区做出的贡献。
-
-**为什么重写**：随着 Chrome Extension Manifest V3 的推出，经典的 xswitch 插件因为使用了 V2 规范而无法在新版浏览器中正常运行。为了延续这个优秀工具的生命力，并保持开发者们熟悉的操作习惯，我们从零开始重新构建了这个现代化的版本。
-
-**同类推荐**：如果 Switch V3 无法满足您的需求，也推荐试试这些优秀的同类插件：
-
-- [山海关](https://chrome.google.com/webstore/detail/guan-extension/jfalnandddhgfnmejfgjgfbfnnkhljog) - 功能强大的请求拦截工具
-- [Camora](https://chromewebstore.google.com/detail/camora/mekhlonkhdepfdocpjpkafckjckloahm) - 简洁实用的代理切换器
-
-> 💻 **开发说明**：本项目采用 AI 辅助开发，时间比较短。虽然我已经进行了不怎么充分的测试，但作为一个快速迭代的项目，难免存在一些边缘情况的 BUG。如果您在使用中遇到问题，欢迎提交 Issue，我会积极修复和改进。
-
----
+**English** | [简体中文](README-zh.md)
 
 A modern HTTP request forwarding and debugging tool for developers, built with React, TypeScript, and Manifest V3.
 
-## Features
+## 🙏 Acknowledgments & Background
+
+**Tribute to the Classic**: This project is deeply inspired by [xswitch](https://github.com/yize/xswitch). Thanks to the original author [@yize](https://github.com/yize) for contributing to the developer community.
+
+**Why Rewrite**: With the release of Chrome Extension Manifest V3, the classic xswitch extension can no longer run properly in modern browsers due to its V2 specification. To continue the life of this excellent tool while maintaining the familiar user experience developers love, we rebuilt this modernized version from scratch.
+
+**Alternative Recommendations**: If Switch V3 doesn't meet your needs, we also recommend these excellent similar extensions:
+
+- [Shanhaiguan](https://chrome.google.com/webstore/detail/guan-extension/jfalnandddhgfnmejfgjgfbfnnkhljog) - Powerful request interception tool
+- [Camora](https://chromewebstore.google.com/detail/camora/mekhlonkhdepfdocpjpkafckjckloahm) - Simple and practical proxy switcher
+
+> 💻 **Development Note**: This project was developed with AI assistance and completed in two and a half days. While we've conducted testing, as a rapid iteration project, there may be some edge case bugs. If you encounter issues during use, please submit an Issue, and we'll actively fix and improve.
+
+## ✨ Features
 
 - **🔄 Request Forwarding**: Redirect HTTP requests using string matching or regular expressions
 - **🌐 CORS Support**: Automatically handle Cross-Origin Resource Sharing
-- **📝 Monaco Editor**: Advanced JSON configuration editor with syntax highlighting
-- **🗂️ Group Management**: Organize rules into different groups
+- **📝 Code Editor**: Advanced CodeMirror 6 editor with syntax highlighting and real-time validation
+- **🗂️ Group Management**: Organize rules into different groups with enable/disable controls
 - **⚡ Performance**: Optimized for fast rule matching and low memory usage
-- **🎨 Modern UI**: Built with Ant Design for a clean, professional interface
+- **🎨 Modern UI**: Built with Ant Design 5 for a clean, professional interface
 - **🔧 Developer Friendly**: Easy configuration import/export and debugging tools
+- **🌍 Internationalization**: Complete Chinese and English support with automatic browser language detection
+- **🚀 Auto-Save**: Debounced auto-save functionality for seamless editing experience
+- **🔍 Real-time Validation**: JSON format validation with error highlighting
+- **📱 Responsive Design**: Works perfectly in both popup and tab modes
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Installation
 
 1. Clone this repository
+
    ```bash
    git clone <repository-url>
    cd xswitch-v3
    ```
 
 2. Install dependencies
+
    ```bash
    pnpm install
    ```
 
 3. Build the extension
+
    ```bash
    pnpm run build
    ```
@@ -76,11 +83,9 @@ pnpm run zip
 # Type checking
 pnpm run compile
 
-# Linting
+# Linting and formatting
 pnpm run lint
 pnpm run lint:fix
-
-# Code formatting
 pnpm run format
 pnpm run format:check
 
@@ -91,7 +96,7 @@ pnpm run test:ui       # Run tests with UI
 pnpm run test:coverage # Run tests with coverage
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 ### Basic Configuration Format
 
@@ -110,9 +115,9 @@ pnpm run test:coverage # Run tests with coverage
 - **String Match**: Direct string replacement
 - **Regex Match**: Pattern matching with regular expressions (use `(.*)` prefix)
 
-### Examples
+### Configuration Examples
 
-#### Local Development
+#### Local Development Setup
 
 ```json
 {
@@ -120,7 +125,7 @@ pnpm run test:coverage # Run tests with coverage
 }
 ```
 
-#### Multiple Environment Forwarding
+#### Multi-Environment Forwarding
 
 ```json
 {
@@ -131,34 +136,35 @@ pnpm run test:coverage # Run tests with coverage
 }
 ```
 
-#### Regex Pattern Matching
+#### Advanced Regex Patterns
 
 ```json
 {
   "proxy": [
     ["(.*).api.com/v1", "$1.api.com/v2"],
     ["(.*)production.com", "$1staging.com"]
-  ]
+  ],
+  "cors": ["(.*).api.com"]
 }
 ```
 
-## Architecture
+## 🏗️ Architecture
 
 ### Manifest V3 Migration
 
 This extension uses Chrome's latest Manifest V3 specification:
 
-- **Service Worker**: Replaces background pages for better performance
-- **declarativeNetRequest**: Modern API for request interception
-- **Enhanced Security**: Improved permissions and content security
+- **Service Worker**: Replaces background pages for better performance and security
+- **declarativeNetRequest**: Modern API for request interception with better performance
+- **Enhanced Security**: Improved permissions model and content security policies
 
 ### Technology Stack
 
 - **Frontend**: React 19 + TypeScript
 - **UI Library**: Ant Design 5
-- **State Management**: ahooks (useRequest, useMemoizedFn)
-- **Build Tool**: WXT (Vite-based)
-- **Code Editor**: CodeMirror 6
+- **State Management**: ahooks (useRequest, useMemoizedFn, useDebounceFn)
+- **Build Tool**: WXT (Next-generation Vite-based extension framework)
+- **Code Editor**: CodeMirror 6 with JSON syntax highlighting
 - **Package Manager**: pnpm
 - **Testing**: Vitest + jsdom
 - **Linting**: ESLint + Prettier
@@ -167,7 +173,7 @@ This extension uses Chrome's latest Manifest V3 specification:
 
 ```
 entrypoints/
-├── background.ts           # Service worker entry
+├── background.ts           # Service worker entry point
 ├── background/
 │   ├── controllers/        # Message handling controllers
 │   ├── dao/               # Data access layer
@@ -191,83 +197,97 @@ tests/
 types/                     # Shared TypeScript definitions
 ```
 
-## Browser Compatibility
+## 🌏 Browser Compatibility
 
-- Chrome 88+ (Manifest V3 support)
-- Edge 88+ (Chromium-based)
-- Firefox 109+ (with `pnpm run build:firefox`)
+- **Chrome 88+** (Manifest V3 support)
+- **Edge 88+** (Chromium-based)
+- **Firefox 109+** (with `pnpm run build:firefox`)
 
-## Development Guide
+## 🛠️ Development Guide
 
 ### Architecture Overview
 
-The extension follows a layered architecture:
+The extension follows a clean layered architecture:
 
-1. **Background Layer**: Service worker with controllers, services, and data access
-2. **UI Layer**: React-based popup interface with modern hooks
-3. **Communication Layer**: Type-safe message passing between layers
+1. **Background Layer**: Service worker with controllers, services, and data access objects
+2. **UI Layer**: React-based popup interface with modern hooks and state management
+3. **Communication Layer**: Type-safe message passing with locale support
+4. **Shared Layer**: Common utilities and internationalization
 
 ### Key Features
 
-- **Modular Design**: Separation of concerns with controllers, services, and DAOs
+- **Modular Design**: Clear separation of concerns with controllers, services, and DAOs
 - **Type Safety**: Full TypeScript coverage with strict type checking
 - **State Management**: Reactive state using ahooks with automatic data synchronization
-- **Debounced Saves**: Automatic rule persistence with performance optimization
-- **Error Handling**: Comprehensive error boundaries and user feedback
+- **Debounced Operations**: Auto-save with performance optimization
+- **Error Handling**: Comprehensive error boundaries and user-friendly feedback
+- **Internationalization**: Runtime language switching with persistent preferences
 
 ### Adding New Rules
 
-1. Use the popup interface for quick rule creation
-2. Rules support both string matching and regex patterns
-3. Groups help organize related rules
-4. Rules are validated in real-time with JSON format checking
+1. **Quick Creation**: Use the popup interface for rapid rule creation
+2. **Format Support**: Rules support both string matching and regex patterns
+3. **Organization**: Groups help organize related rules logically
+4. **Validation**: Real-time JSON format checking with error highlighting
+5. **Management**: Easy enable/disable, edit, copy, and delete operations
 
 ### Debugging
 
-1. **Service Worker**: 
-   - Navigate to `chrome://extensions/`
-   - Find "Switch V3" and click "service worker" to debug background scripts
-   
-2. **Popup Interface**:
-   - Right-click the extension icon → "Inspect popup"
-   - Use React DevTools for component debugging
+#### 1. Service Worker Debugging
 
-3. **Network Monitoring**:
-   - Open DevTools → Network tab to see request redirections
-   - Check the Console for rule matching logs
+- Navigate to `chrome://extensions/`
+- Find "Switch V3" and click "service worker" to debug background scripts
+- Monitor console logs for request processing and rule matching
+
+#### 2. Popup Interface Debugging
+
+- Right-click the extension icon → "Inspect popup"
+- Use React DevTools for component state inspection
+- Check console for frontend errors and state changes
+
+#### 3. Network Monitoring
+
+- Open DevTools → Network tab to observe request redirections
+- Check Console for rule matching logs and performance metrics
+- Use the extension's real-time feedback for rule validation
 
 ### Testing
 
-The project includes comprehensive test coverage:
+The project includes comprehensive testing infrastructure:
 
 ```bash
-# Run all tests
+# Run all tests with watch mode
 pnpm run test
 
-# Run specific test suites
+# Run specific test files
 pnpm run test -- json.test.ts
 pnpm run test -- storage.test.ts
 
-# Generate coverage report
+# Generate detailed coverage report
 pnpm run test:coverage
+
+# Run tests with visual interface
+pnpm run test:ui
 ```
 
 ### Performance Optimization
 
-- **Smart Caching**: Rules are cached for fast matching
-- **Debounced Saves**: Configuration changes are batched to reduce I/O
-- **Efficient Regex**: Patterns are compiled once and reused
-- **Memory Management**: Minimal memory footprint with automatic cleanup
+- **Smart Caching**: Rules are compiled and cached for lightning-fast matching
+- **Debounced Saves**: Configuration changes are batched to minimize I/O operations
+- **Efficient Regex**: Patterns are compiled once and reused across requests
+- **Memory Management**: Minimal memory footprint with automatic garbage collection
+- **Lazy Loading**: Components and resources loaded on demand
 
-## Security
+## 🔒 Security
 
-- **Local Storage**: All data stored locally in Chrome storage, no cloud dependencies
-- **Minimal Permissions**: Only requests necessary permissions for core functionality
-- **Content Security Policy**: Strict CSP compliance for enhanced security
+- **Local Storage**: All data stored locally in Chrome storage with no external dependencies
+- **Minimal Permissions**: Requests only essential permissions for core functionality
+- **Content Security Policy**: Strict CSP implementation for enhanced security
 - **No External Requests**: Extension operates entirely offline after installation
 - **Type Safety**: TypeScript prevents common security vulnerabilities
+- **Input Validation**: Comprehensive validation for all user inputs and configurations
 
-## API Reference
+## 📚 API Reference
 
 ### Rule Configuration Format
 
@@ -275,108 +295,187 @@ pnpm run test:coverage
 interface GroupRuleVo {
   id: string;
   groupName: string;
-  ruleText: string;  // JSON string with proxy and cors rules
+  ruleText: string; // JSON string containing proxy and cors rules
   enabled: boolean;
   createTime: string;
   updateTime: string;
 }
 
 interface RuleConfig {
-  proxy: [string, string][];  // [source, target] pairs
-  cors?: string[];            // CORS enabled domains
+  proxy: [string, string][]; // [source, target] pairs
+  cors?: string[]; // Domains with CORS enabled
 }
 ```
 
 ### Background API
 
-The extension exposes these APIs for communication:
+The extension exposes these APIs for frontend-backend communication:
 
-- `LOAD_GROUPS`: Load all rule groups
-- `SAVE_GROUP`: Save a single rule group
-- `CREATE_GROUP`: Create a new rule group
-- `UPDATE_GROUP`: Update existing rule group
-- `DELETE_GROUP`: Delete a rule group
-- `TOGGLE_GROUP`: Enable/disable a rule group
-- `CLEAR_ALL_DATA`: Reset all data
+- **`LOAD_GROUPS`**: Load all rule groups with metadata
+- **`SAVE_GROUP`**: Save a single rule group with validation
+- **`CREATE_GROUP`**: Create new rule group with defaults
+- **`UPDATE_GROUP`**: Update existing rule group properties
+- **`DELETE_GROUP`**: Remove rule group and cleanup
+- **`TOGGLE_GROUP`**: Enable/disable rule group state
+- **`CLEAR_ALL_DATA`**: Reset all data to factory defaults
 
-## Contributing
+## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
+We welcome contributions from the community! Please follow these guidelines:
+
+### Getting Started
 
 1. **Fork the repository** and create your feature branch
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
 
-2. **Make your changes** with proper TypeScript types
-3. **Add tests** for new functionality
+2. **Set up development environment**
+
    ```bash
-   pnpm run test
+   pnpm install
+   pnpm run dev
    ```
 
-4. **Run linting and formatting**
+3. **Make your changes** with proper TypeScript types and documentation
+
+4. **Add comprehensive tests** for new functionality
+
+   ```bash
+   pnpm run test
+   pnpm run test:coverage
+   ```
+
+5. **Ensure code quality**
+
    ```bash
    pnpm run lint:fix
    pnpm run format
+   pnpm run compile
    ```
 
-5. **Commit with conventional commits**
+6. **Use conventional commits**
+
    ```bash
    git commit -m "feat: add amazing feature"
+   git commit -m "fix: resolve issue with rule matching"
+   git commit -m "docs: update API documentation"
    ```
 
-6. **Submit a pull request** with a clear description
+7. **Submit a pull request** with clear description and screenshots if applicable
 
 ### Development Guidelines
 
-- Follow TypeScript strict mode requirements
-- Use React hooks patterns with ahooks
-- Maintain test coverage above 80%
-- Follow the existing code style and patterns
-- Update documentation for API changes
+- **TypeScript**: Follow strict mode requirements and provide comprehensive types
+- **React Patterns**: Use modern hooks patterns with ahooks for state management
+- **Testing**: Maintain test coverage above 80% for all new code
+- **Code Style**: Follow existing patterns and use provided linting configuration
+- **Documentation**: Update documentation for any API changes or new features
+- **Internationalization**: Add translations for any user-facing text
 
-## Roadmap
+### Code Review Process
 
-- [ ] **Advanced Filtering**: Support for request headers and method filtering
-- [ ] **Import/Export**: Configuration backup and sharing functionality  
+1. All submissions require review from maintainers
+2. Automated tests must pass before merge
+3. Code style and type checks must pass
+4. Documentation updates should accompany feature changes
+
+## 🗺️ Roadmap
+
+### Short Term (Next Release)
+
+- [ ] **Import/Export**: Configuration backup and sharing functionality
 - [ ] **Rule Templates**: Pre-built rule sets for common development scenarios
+- [ ] **Advanced Filtering**: Support for request headers and HTTP methods
+
+### Medium Term
+
 - [ ] **Performance Dashboard**: Real-time statistics and rule matching metrics
+- [ ] **Rule Testing**: Built-in testing tools for rule validation
+- [ ] **Advanced Editor**: Enhanced code editor with autocomplete and validation
+
+### Long Term
+
 - [ ] **Sync Support**: Cross-device rule synchronization (optional)
+- [ ] **Team Collaboration**: Shared rule sets for development teams
+- [ ] **Plugin System**: Extensible architecture for custom rule processors
 
-## License
+## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
 
-## Changelog
+## 📝 Changelog
 
-### Current Version
-- Full Manifest V3 compatibility
-- Modern React 19 + TypeScript architecture
-- CodeMirror 6 integration for rule editing
-- Comprehensive test suite with Vitest
-- ahooks integration for better state management
-- Debounced auto-save functionality
-- Real-time JSON validation
+### Current Version (v1.0.0)
 
-## Support
+#### ✨ New Features
 
-- **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: Join community discussions for usage questions
-- **Documentation**: Check this README and inline code documentation
+- **Complete Manifest V3 Compatibility**: Full migration to modern Chrome extension APIs
+- **Modern React 19 Architecture**: Latest React with concurrent features and TypeScript
+- **CodeMirror 6 Integration**: Advanced code editor with syntax highlighting
+- **Comprehensive Internationalization**: Runtime language switching with persistent preferences
+- **Auto-Save Functionality**: Debounced auto-save with visual feedback
+- **Real-time Validation**: JSON format validation with error highlighting
 
-## Migration from Legacy Versions
+#### 🔧 Technical Improvements
 
-If migrating from older xswitch versions:
+- **ahooks Integration**: Modern React hooks for better state management
+- **WXT Build System**: Next-generation Vite-based build system
+- **Comprehensive Testing**: Vitest-based testing with high coverage
+- **Type Safety**: Strict TypeScript configuration with full type coverage
+- **Performance Optimization**: Smart caching and efficient rule matching
 
-1. **Export** your existing rules from the old extension
-2. **Install** Switch V3 following the installation guide above
-3. **Recreate** rules using the new JSON format:
+#### 🎨 UI/UX Enhancements
+
+- **Ant Design 5**: Modern, accessible UI components
+- **Responsive Design**: Perfect experience in both popup and tab modes
+- **Dark/Light Theme**: Automatic theme detection and switching
+- **Improved Accessibility**: Full keyboard navigation and screen reader support
+
+## 💬 Support
+
+### Getting Help
+
+- **📋 Issues**: Report bugs and request features on [GitHub Issues](https://github.com/your-repo/issues)
+- **💬 Discussions**: Join community discussions for usage questions and tips
+- **📖 Documentation**: Comprehensive guides in this README and inline code comments
+
+### Contributing Support
+
+- **🔧 Development**: Follow the contributing guidelines above
+- **🌍 Translations**: Help improve internationalization support
+- **📝 Documentation**: Contribute to documentation and examples
+
+## 🔄 Migration from Legacy Versions
+
+### From xswitch v2 or similar tools:
+
+1. **Export Configuration**: Save your existing rules from the old extension
+
+2. **Install Switch V3**: Follow the installation guide above
+
+3. **Convert Rules**: Transform to the new JSON format:
+
    ```json
    {
-     "proxy": [["old-url", "new-url"]],
-     "cors": ["domain.com"]
+     "proxy": [
+       ["https://old-api.com", "https://new-api.com"],
+       ["(.*).staging.com", "$1.development.com"]
+     ],
+     "cors": ["api.example.com"]
    }
    ```
-4. **Test** your rules to ensure they work as expected
 
-The new format is more structured but provides better validation and performance.
+4. **Test Thoroughly**: Verify that all rules work as expected
+
+5. **Enjoy New Features**: Take advantage of improved performance and new capabilities
+
+### Key Differences
+
+- **Structured Format**: More explicit and validated JSON configuration
+- **Better Performance**: Optimized rule matching and lower resource usage
+- **Enhanced UI**: Modern interface with better usability
+- **Future-Proof**: Built on latest web standards and best practices
+
+The migration provides significant improvements in stability, performance, and user experience.
