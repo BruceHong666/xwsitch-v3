@@ -299,43 +299,6 @@ describe('End-to-End Integration Tests', () => {
     });
   });
 
-  describe('数据导入导出', () => {
-    it('应该完成完整的导入导出流程', async () => {
-      // 创建测试数据
-      const originalGroups = [
-        createTestGroup({ id: 'export-test-1', groupName: '导出测试1' }),
-        createTestGroup({ id: 'export-test-2', groupName: '导出测试2' })
-      ];
-
-      await compatStorage.saveGroups(originalGroups);
-      await compatStorage.saveGlobalEnabled(true);
-
-      // 导出数据
-      const exportedData = await compatStorage.exportData();
-      expect(typeof exportedData).toBe('string');
-
-      const parsedExport = JSON.parse(exportedData);
-      expect(parsedExport.groups).toHaveLength(2);
-      expect(parsedExport.globalEnabled).toBe(true);
-
-      // 清空数据
-      await compatStorage.saveGroups([]);
-      await compatStorage.saveGlobalEnabled(false);
-
-      // 导入数据
-      const importResult = await compatStorage.importData(exportedData);
-      expect(importResult.success).toBe(true);
-
-      // 验证导入结果
-      const importedGroups = await compatStorage.loadGroups();
-      const importedGlobal = await compatStorage.loadGlobalEnabled();
-
-      expect(importedGroups).toHaveLength(2);
-      expect(importedGroups[0].groupName).toBe('导出测试1');
-      expect(importedGroups[1].groupName).toBe('导出测试2');
-      expect(importedGlobal).toBe(true);
-    });
-  });
 
   describe('用户场景模拟', () => {
     it('应该模拟用户创建和管理规则的完整流程', async () => {

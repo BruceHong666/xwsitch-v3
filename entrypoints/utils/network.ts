@@ -178,7 +178,7 @@ export class NetworkService {
       console.log('Converting URL filter for source:', source);
 
       if (source.startsWith('(.*')) {
-        const domainMatch = source.match(/https?:\/\/([^\/\*\(\)]+)/);
+        const domainMatch = source.match(/https?:\/\/([^/*()]+)/);
         if (domainMatch) {
           const domain = domainMatch[1];
           console.log('Extracted domain from regex:', domain);
@@ -241,7 +241,7 @@ export class NetworkService {
           return {
             regexSubstitution: target.replace(/\$1/g, '\\1')
           };
-        } catch (regexError) {
+        } catch {
           console.log('Regex substitution failed, falling back to simple redirect');
           return { url: target };
         }

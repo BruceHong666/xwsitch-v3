@@ -1,7 +1,6 @@
-import { GroupRuleVo } from '../types';
-import { compatStorage } from '../utils/storage';
-import { countActiveRules, validateJsonFormat } from './utils/json';
-import { networkService } from './utils/network';
+import { MessageController } from './background/controllers/MessageController';
+import { SystemService } from './background/services/SystemService';
+import { ApiRequest } from './background/types/api';
 
 export default defineBackground(() => {
   console.log(
@@ -9,180 +8,55 @@ export default defineBackground(() => {
     JSON.stringify({ id: browser.runtime.id })
   );
 
-  // 初始化徽章状态
-  initializeBadge();
+  // 初始化服务
+  const messageController = MessageController.getInstance();
+  const systemService = SystemService.getInstance();
 
-  // 监听存储变化
-  compatStorage.onStorageChanged(changes => {
-    console.log(
-      '📦 Storage changed, updating badge and network rules:',
-      JSON.stringify(changes)
-    );
-    updateBadge();
-    updateNetworkRules();
-  });
+  // 启动系统初始化
+  initializeSystem();
 
-  // 监听来自popup的消息，立即更新徽章
+  // 设置存储监听器
+  systemService.setupStorageListener();
+
+  // 监听来自popup的消息
   if (typeof browser !== 'undefined' && browser.runtime) {
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'UPDATE_BADGE') {
-        console.log(
-          '📨 Received UPDATE_BADGE message from popup:',
-          JSON.stringify(message)
-        );
-        updateBadge();
-        sendResponse({ success: true });
-      }
-    });
-  }
-
-  // 插件启动时初始化默认数据、徽章和网络规则
-  async function initializeBadge() {
-    await initializeDefaultData();
-    await updateNetworkRules();
-    await updateBadge();
-  }
-
-  // 初始化默认数据
-  async function initializeDefaultData() {
-    try {
-      console.log('🔧 Initializing default data...');
+      console.log('📨 Received message:', message.type);
       
-      // 检查是否已有全局启用状态设置
-      const hasGlobalEnabled = await compatStorage.hasGlobalEnabled();
-      if (!hasGlobalEnabled) {
-        console.log('💾 Setting default global enabled state to true');
-        await compatStorage.saveGlobalEnabled(true);
-      }
-
-      // 检查是否已有规则组
-      const groups = await compatStorage.loadGroups();
-      if (groups.length === 0) {
-        console.log('💾 Creating default rule group');
-        const defaultGroup: GroupRuleVo = {
-          id: Date.now().toString(),
-          groupName: '默认规则组',
-          enabled: true,
-          ruleText: '{}',
-          createTime: new Date().toISOString(),
-          updateTime: new Date().toISOString(),
-        };
-        await compatStorage.saveGroups([defaultGroup]);
-      }
-
-      console.log('✅ Default data initialization completed');
-    } catch (error) {
-      console.error('❌ Failed to initialize default data:', error);
-    }
-  }
-
-  // 更新网络规则
-  async function updateNetworkRules() {
-    try {
-      console.log('🔄 Network rules update started...');
-      const [groups, globalEnabled] = await Promise.all([
-        compatStorage.loadGroups(),
-        compatStorage.loadGlobalEnabled(),
-      ]);
-
-      console.log(
-        '📊 Network rules update data:',
-        JSON.stringify({
-          groups: groups.length,
-          globalEnabled,
-          enabledGroups: groups.filter(g => g.enabled).length,
-        })
-      );
-
-      // 更新网络规则
-      await networkService.updateRules(groups, globalEnabled);
-
-      // 设置网络请求日志监听
-      networkService.setupNetworkLogging(globalEnabled, groups);
-
-      console.log('✅ Network rules updated successfully');
-    } catch (error) {
-      console.error('❌ Failed to update network rules:', error);
-    }
-  }
-
-  // 更新插件徽章
-  async function updateBadge() {
-    try {
-      console.log('🔄 Badge update started...');
-      const [groups, globalEnabled] = await Promise.all([
-        compatStorage.loadGroups(),
-        compatStorage.loadGlobalEnabled(),
-      ]);
-
-      console.log(
-        '📊 Badge update data:',
-        JSON.stringify({
-          groups: groups.length,
-          globalEnabled,
-          enabledGroups: groups.filter(g => g.enabled).length,
-        })
-      );
-
-      if (!globalEnabled) {
-        // 全局关闭时显示 OFF
-        console.log('🔴 Setting badge to OFF (global disabled)');
-        setBadge('OFF', '#ff4d4f');
-        return;
-      }
-
-      // 计算活跃规则数量
-      const totalActiveRules = calculateTotalActiveRules(groups);
-      console.log('Total active rules:', totalActiveRules);
-
-      if (totalActiveRules > 0) {
-        // 有活跃规则时显示数量（绿色）
-        console.log(`🟢 Setting badge to ${totalActiveRules} (active rules)`);
-        setBadge(totalActiveRules.toString(), '#52c41a');
-      } else {
-        // 无活跃规则时显示 0（橙色）
-        console.log('🟡 Setting badge to 0 (no active rules)');
-        setBadge('0', '#faad14');
-      }
-    } catch (error) {
-      console.error('Failed to update badge:', error);
-      setBadge('ERR', '#ff4d4f');
-    }
-  }
-
-  // 计算总的活跃规则数量
-  function calculateTotalActiveRules(groups: GroupRuleVo[]): number {
-    let totalRules = 0;
-
-    groups.forEach(group => {
-      // 只计算启用的规则组
-      if (!group.enabled) return;
-
-      // 验证 JSON 格式
-      const validation = validateJsonFormat(group.ruleText);
-      if (!validation.isValid) return;
-
-      // 计算该规则组中的规则数量
-      totalRules += countActiveRules(group.ruleText);
+      // 异步处理消息
+      (async () => {
+        try {
+          // 处理API请求
+          const response = await messageController.handleMessage(message as ApiRequest, sender);
+          
+          console.log('✅ Message handled successfully:', message.type, response);
+          
+          // 发送响应
+          sendResponse(response);
+        } catch (error) {
+          console.error('❌ Message handling failed:', error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : '未知错误'
+          });
+        }
+      })();
+      
+      // 返回true表示将异步发送响应
+      return true;
     });
-
-    return totalRules;
   }
 
-  // 设置徽章文本和颜色
-  function setBadge(text: string, color: string) {
-    console.log(`🎯 setBadge called:`, JSON.stringify({ text, color }));
+  /**
+   * 系统初始化
+   */
+  async function initializeSystem() {
     try {
-      if (typeof browser !== 'undefined' && browser.action) {
-        console.log('🌐 Using browser.action API');
-        browser.action.setBadgeText({ text });
-        browser.action.setBadgeBackgroundColor({ color });
-        console.log('✅ Badge set successfully via browser.action');
-      } else {
-        console.warn('⚠️ No badge API available');
-      }
+      console.log('🔧 Initializing system...');
+      await systemService.initialize();
+      console.log('✅ System initialization completed');
     } catch (error) {
-      console.error('❌ Failed to set badge:', error);
+      console.error('❌ System initialization failed:', error);
     }
   }
 });

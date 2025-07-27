@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { compatStorage, EnhancedStorageManager } from '../../utils/storage';
 import { setupTestEnvironment, cleanupTestEnvironment, createTestGroup } from '../utils/testUtils';
-import { mockGroups } from '../fixtures/configs';
 
 /**
  * 存储服务单元测试
@@ -143,44 +142,6 @@ describe('Storage Service', () => {
       await expect(storage.toggleGroupEnabled('non-existent')).rejects.toThrow('Group not found');
     });
 
-    it('应该正确导出数据', async () => {
-      const storage = EnhancedStorageManager.getInstance();
-      const testGroups = [createTestGroup()];
-      
-      await storage.saveGroups(testGroups);
-      await storage.saveGlobalEnabled(true);
-      
-      const exportedData = await storage.exportData();
-      const parsedData = JSON.parse(exportedData);
-      
-      expect(parsedData.groups).toEqual(testGroups);
-      expect(parsedData.globalEnabled).toBe(true);
-      expect(parsedData.exportedAt).toBeDefined();
-    });
-
-    it('应该正确导入数据', async () => {
-      const storage = EnhancedStorageManager.getInstance();
-      const testGroups = [createTestGroup()];
-      
-      const importData = JSON.stringify({
-        groups: testGroups,
-        globalEnabled: true
-      });
-      
-      await storage.importData(importData);
-      
-      const groups = await storage.loadGroups();
-      const enabled = await storage.loadGlobalEnabled();
-      
-      expect(groups).toEqual(testGroups);
-      expect(enabled).toBe(true);
-    });
-
-    it('导入无效数据应该抛出错误', async () => {
-      const storage = EnhancedStorageManager.getInstance();
-      
-      await expect(storage.importData('invalid json')).rejects.toThrow('Invalid import data format');
-    });
 
     it('应该正确清除所有数据', async () => {
       const storage = EnhancedStorageManager.getInstance();
@@ -252,33 +213,6 @@ describe('Storage Service', () => {
       expect(enabled).toBe(true);
     });
 
-    it('应该成功导出数据', async () => {
-      const testGroups = [createTestGroup()];
-      await compatStorage.saveGroups(testGroups);
-      
-      const exportedData = await compatStorage.exportData();
-      expect(typeof exportedData).toBe('string');
-      
-      const parsedData = JSON.parse(exportedData);
-      expect(parsedData.groups).toEqual(testGroups);
-    });
-
-    it('应该成功导入数据', async () => {
-      const testGroups = [createTestGroup()];
-      const importData = JSON.stringify({
-        groups: testGroups,
-        globalEnabled: true
-      });
-      
-      const result = await compatStorage.importData(importData);
-      expect(result.success).toBe(true);
-    });
-
-    it('导入无效数据应该返回错误', async () => {
-      const result = await compatStorage.importData('invalid json');
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('导入失败');
-    });
 
     it('应该正确设置存储变化监听器', () => {
       const callback = vi.fn();

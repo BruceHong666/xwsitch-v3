@@ -299,43 +299,6 @@ export class EnhancedStorageManager {
     return group.enabled;
   }
 
-  /**
-   * 导出配置数据
-   */
-  async exportData(): Promise<string> {
-    const groups = await this.loadGroups();
-    const globalEnabled = await this.loadGlobalEnabled();
-
-    return JSON.stringify(
-      {
-        groups,
-        globalEnabled,
-        exportedAt: new Date().toISOString(),
-      },
-      null,
-      2
-    );
-  }
-
-  /**
-   * 导入配置数据
-   */
-  async importData(jsonData: string): Promise<void> {
-    try {
-      const data = JSON.parse(jsonData);
-
-      if (data.groups && Array.isArray(data.groups)) {
-        await this.saveGroups(data.groups);
-      }
-
-      if (typeof data.globalEnabled === 'boolean') {
-        await this.saveGlobalEnabled(data.globalEnabled);
-      }
-    } catch (error) {
-      console.error('Failed to import data:', error);
-      throw new Error('Invalid import data format');
-    }
-  }
 
   /**
    * 清除所有存储数据
@@ -419,21 +382,6 @@ export const compatStorage = {
     }
   },
 
-  async exportData(): Promise<string> {
-    return enhancedStorage.exportData();
-  },
-
-  async importData(jsonData: string): Promise<OperationResult> {
-    try {
-      await enhancedStorage.importData(jsonData);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : '导入失败',
-      };
-    }
-  },
 
   // 监听存储变化 (简化版)
   onStorageChanged(callback: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>) => void): void {
