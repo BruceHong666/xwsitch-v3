@@ -618,13 +618,10 @@ function App() {
                     className="error-alert"
                   />
                 )}
-                {/* 代码编辑器 */}
-                <div className="editor-wrapper">
-                  <CodeMirrorEditor
-                    value={editorValue}
-                    onChange={handleEditorChange}
-                  />
-                </div>
+                <CodeMirrorEditor
+                  value={editorValue}
+                  onChange={handleEditorChange}
+                />
               </div>
             ) : (
               <div className="empty-state-container">
