@@ -78,17 +78,18 @@ export class SystemService {
         this.setBadge('OFF', '#ff4d4f');
         return;
       }
+      this.setBadge('', '');
 
-      const totalActiveRules = this.calculateTotalActiveRules(groups);
-      console.log('Total active rules:', totalActiveRules);
+      // const totalActiveRules = this.calculateTotalActiveRules(groups);
+      // console.log('Total active rules:', totalActiveRules);
 
-      if (totalActiveRules > 0) {
-        console.log(`🟢 Setting badge to ${totalActiveRules} (active rules)`);
-        this.setBadge(totalActiveRules.toString(), '#52c41a');
-      } else {
-        console.log('🟡 Setting badge to 0 (no active rules)');
-        this.setBadge('0', '#faad14');
-      }
+      // if (totalActiveRules > 0) {
+      //   console.log(`🟢 Setting badge to ${totalActiveRules} (active rules)`);
+      //   this.setBadge(totalActiveRules.toString(), '#52c41a');
+      // } else {
+      //   console.log('🟡 Setting badge to 0 (no active rules)');
+      //   this.setBadge('0', '#faad14');
+      // }
 
       console.log('✅ SystemService.updateBadge success');
     } catch (error) {
