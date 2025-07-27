@@ -1,6 +1,6 @@
 import { GroupRuleVo } from '../../../types';
+import { DEFAULT_NEW_RULE, DEFAULT_RULE } from '../../utils/const';
 import { StorageDao } from '../dao/StorageDao';
-import { DEFAULT_RULE, DEFAULT_NEW_RULE } from '../../utils/const';
 
 /**
  * 规则服务 - 负责规则组的业务逻辑处理
@@ -70,7 +70,10 @@ export class RuleService {
   /**
    * 创建新规则组
    */
-  async createGroup(groupName: string, ruleText: string = DEFAULT_NEW_RULE): Promise<GroupRuleVo> {
+  async createGroup(
+    groupName: string,
+    ruleText: string = DEFAULT_NEW_RULE
+  ): Promise<GroupRuleVo> {
     console.log('🔄 RuleService.createGroup:', groupName);
     try {
       // 验证输入参数
@@ -95,7 +98,7 @@ export class RuleService {
 
       const updatedGroups = [...existingGroups, newGroup];
       await this.saveGroups(updatedGroups);
-      
+
       console.log('✅ RuleService.createGroup success:', newGroup.id);
       return newGroup;
     } catch (error) {
@@ -107,19 +110,30 @@ export class RuleService {
   /**
    * 更新规则组
    */
-  async updateGroup(groupId: string, updates: Partial<GroupRuleVo>): Promise<void> {
+  async updateGroup(
+    groupId: string,
+    updates: Partial<GroupRuleVo>
+  ): Promise<void> {
     console.log('🔄 RuleService.updateGroup:', groupId, Object.keys(updates));
     try {
       const groups = await this.loadGroups();
       const groupIndex = groups.findIndex(group => group.id === groupId);
-      
+
       if (groupIndex === -1) {
         throw new Error('规则组不存在');
       }
 
       // 如果更新名称，检查是否重复
-      if (updates.groupName && updates.groupName !== groups[groupIndex].groupName) {
-        if (groups.some(group => group.id !== groupId && group.groupName === updates.groupName)) {
+      if (
+        updates.groupName &&
+        updates.groupName !== groups[groupIndex].groupName
+      ) {
+        if (
+          groups.some(
+            group =>
+              group.id !== groupId && group.groupName === updates.groupName
+          )
+        ) {
           throw new Error('规则组名称已存在');
         }
       }
@@ -147,7 +161,7 @@ export class RuleService {
     try {
       const groups = await this.loadGroups();
       const filteredGroups = groups.filter(group => group.id !== groupId);
-      
+
       if (filteredGroups.length === groups.length) {
         throw new Error('规则组不存在');
       }
@@ -175,7 +189,7 @@ export class RuleService {
 
       const newEnabled = !group.enabled;
       await this.updateGroup(groupId, { enabled: newEnabled });
-      
+
       console.log('✅ RuleService.toggleGroup success:', newEnabled);
       return newEnabled;
     } catch (error) {
@@ -199,7 +213,6 @@ export class RuleService {
       throw error;
     }
   }
-
 
   /**
    * 清除所有数据

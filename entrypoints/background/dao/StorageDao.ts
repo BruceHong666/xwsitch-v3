@@ -73,7 +73,7 @@ const createLocalStorageFallback = (): StorageAPI => {
         newValue,
       },
     };
-    listeners.forEach((listener) => {
+    listeners.forEach(listener => {
       try {
         listener(changes, 'local');
       } catch (error) {
@@ -174,13 +174,13 @@ export class StorageDao {
     console.log('💾 StorageDao.saveGroup:', group.id);
     const groups = await this.loadGroups();
     const index = groups.findIndex(g => g.id === group.id);
-    
+
     if (index >= 0) {
       groups[index] = group;
     } else {
       groups.push(group);
     }
-    
+
     await this.saveGroups(groups);
   }
 

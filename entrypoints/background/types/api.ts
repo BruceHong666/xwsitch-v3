@@ -6,7 +6,6 @@ import { GroupRuleVo } from '../../../types';
 export enum ApiRequestType {
   // 规则组管理
   LOAD_GROUPS = 'LOAD_GROUPS',
-  SAVE_GROUPS = 'SAVE_GROUPS',
   SAVE_GROUP = 'SAVE_GROUP',
   CREATE_GROUP = 'CREATE_GROUP',
   UPDATE_GROUP = 'UPDATE_GROUP',

@@ -77,20 +77,6 @@ export class ApiService implements MessageSender {
   }
 
   /**
-   * 保存所有规则组
-   */
-  async saveGroups(groups: GroupRuleVo[]): Promise<void> {
-    const response = await this.sendMessage({
-      type: ApiRequestType.SAVE_GROUPS,
-      data: groups,
-    });
-
-    if (!response.success) {
-      throw new Error(response.error || '保存规则组失败');
-    }
-  }
-
-  /**
    * 保存单个规则组
    */
   async saveGroup(group: GroupRuleVo): Promise<void> {

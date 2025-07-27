@@ -48,10 +48,6 @@ export class MessageController implements MessageHandler {
           result = await this.handleLoadGroups();
           break;
 
-        case ApiRequestType.SAVE_GROUPS:
-          result = await this.handleSaveGroups(request.data);
-          break;
-
         case ApiRequestType.SAVE_GROUP:
           result = await this.handleSaveGroup(request.data);
           break;
@@ -123,17 +119,6 @@ export class MessageController implements MessageHandler {
    */
   private async handleLoadGroups() {
     return await this.ruleService.loadGroups();
-  }
-
-  /**
-   * 处理保存规则组请求
-   */
-  private async handleSaveGroups(data: any) {
-    if (!Array.isArray(data)) {
-      throw new Error('规则组数据必须是数组格式');
-    }
-    await this.ruleService.saveGroups(data);
-    return { success: true };
   }
 
   /**
