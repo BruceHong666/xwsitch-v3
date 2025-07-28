@@ -126,7 +126,14 @@ export class NetworkService {
           });
         }
       } catch (error) {
-        console.error('Failed to generate proxy rule:', rule, error);
+        console.error(
+          'Failed to generate proxy rule:',
+          'Rule:',
+          rule,
+          'Error:',
+          error instanceof Error ? error.message : String(error),
+          'Code: PROXY_RULE_ERROR'
+        );
       }
     });
 
@@ -287,7 +294,16 @@ export class NetworkService {
       console.log('Fallback redirect:', target);
       return { url: target };
     } catch (error) {
-      console.error('Failed to convert redirect:', source, target, error);
+      console.error(
+        'Failed to convert redirect:',
+        'Source:',
+        source,
+        'Target:',
+        target,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: REDIRECT_CONVERSION_ERROR'
+      );
       return undefined;
     }
   }
@@ -337,7 +353,14 @@ export class NetworkService {
       const newRules = await chrome.declarativeNetRequest.getDynamicRules();
       console.log('Active rules after update:', newRules.length);
     } catch (error) {
-      console.error('❌ Failed to apply declarative rules:', error);
+      console.error(
+        '❌ Failed to apply declarative rules:',
+        'Rules count:',
+        rules.length,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: DECLARATIVE_RULES_ERROR'
+      );
       if (error instanceof Error) {
         console.error('Error details:', error.message);
       }
@@ -365,8 +388,9 @@ export class NetworkService {
     if (typeof chrome === 'undefined' || !chrome.webRequest) return;
 
     chrome.webRequest.onBeforeRequest.addListener(
-      (details: chrome.webRequest.WebRequestBodyDetails) => {
+      (details: any) => {
         this.logProxyHit(details, globalEnabled, groups);
+        return undefined;
       },
       { urls: ['<all_urls>'] },
       ['requestBody']
@@ -381,7 +405,7 @@ export class NetworkService {
   }
 
   private logProxyHit(
-    details: chrome.webRequest.WebRequestDetails,
+    details: any,
     globalEnabled: boolean,
     groups: GroupRuleVo[]
   ): void {
@@ -461,8 +485,12 @@ export class NetworkService {
         });
       } catch (error) {
         console.error(
-          `Failed to parse rules for group ${group.groupName}:`,
-          error
+          'Failed to parse rules for group:',
+          'Group name:',
+          group.groupName,
+          'Error:',
+          error instanceof Error ? error.message : String(error),
+          'Code: RULE_PARSE_ERROR'
         );
       }
     });
@@ -503,8 +531,12 @@ export class NetworkService {
           }
         } catch (error) {
           console.error(
-            `Failed to check rules for group ${group.groupName}:`,
-            error
+            'Failed to check rules for group:',
+            'Group name:',
+            group.groupName,
+            'Error:',
+            error instanceof Error ? error.message : String(error),
+            'Code: RULE_CHECK_ERROR'
           );
         }
       });
@@ -537,7 +569,14 @@ export class NetworkService {
           const regex = new RegExp(pattern, 'i');
           return regex.test(url);
         } catch (error) {
-          console.error('Invalid regex pattern:', pattern, error);
+          console.error(
+            'Invalid regex pattern:',
+            'Pattern:',
+            pattern,
+            'Error:',
+            error instanceof Error ? error.message : String(error),
+            'Code: REGEX_ERROR'
+          );
           return false;
         }
       } else {
@@ -545,7 +584,16 @@ export class NetworkService {
         return url.indexOf(pattern) > -1;
       }
     } catch (error) {
-      console.error('URL matching failed:', error);
+      console.error(
+        'URL matching failed:',
+        'URL:',
+        url,
+        'Pattern:',
+        pattern,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: URL_MATCH_ERROR'
+      );
       return false;
     }
   }

@@ -22,26 +22,40 @@ export default defineBackground(() => {
   if (typeof browser !== 'undefined' && browser.runtime) {
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.log('📨 Received message:', message.type);
-      
+
       // 异步处理消息
       (async () => {
         try {
           // 处理API请求
-          const response = await messageController.handleMessage(message as ApiRequest, sender);
-          
-          console.log('✅ Message handled successfully:', message.type, response);
-          
+          const response = await messageController.handleMessage(
+            message as ApiRequest,
+            sender
+          );
+
+          console.log(
+            '✅ Message handled successfully:',
+            message.type,
+            response
+          );
+
           // 发送响应
           sendResponse(response);
         } catch (error) {
-          console.error('❌ Message handling failed:', error);
+          console.error(
+            '❌ Message handling failed:',
+            'Type:',
+            message.type,
+            'Error:',
+            error instanceof Error ? error.message : String(error),
+            'Code: BACKGROUND_ERROR'
+          );
           sendResponse({
             success: false,
-            error: error instanceof Error ? error.message : '未知错误'
+            error: error instanceof Error ? error.message : '未知错误',
           });
         }
       })();
-      
+
       // 返回true表示将异步发送响应
       return true;
     });

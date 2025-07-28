@@ -15,6 +15,7 @@ import {
   List,
   Modal,
   Space,
+  Spin,
   Switch,
   Tooltip,
   Typography,
@@ -142,20 +143,6 @@ function App() {
     { wait: 500 } // 500ms防抖延迟
   );
 
-  useRequest(async (enabled: boolean) => {
-    const systemApi = ApiFactory.getSystemApi();
-
-    const saveResult = await systemApi.saveGlobalEnabled(enabled);
-    if (!saveResult.success) {
-      console.error('❌ 保存全局状态失败:', saveResult.error);
-      return {
-        success: false,
-        message: saveResult.error || '保存全局状态失败',
-      };
-    }
-    await loadGlobalEnabled();
-  });
-
   /**
    * 处理全局启用状态变更
    */
@@ -239,17 +226,21 @@ function App() {
   /**
    * 切换规则组启用状态
    */
-  const handleToggleGroupEnabled = async (groupId: string) => {
-    const ruleApi = ApiFactory.getRuleApi();
-    const result = await ruleApi.toggleGroup(groupId);
-    if (!result.success) {
-      message.error('操作失败: ' + result.error);
-      return;
-    }
-    await loadGroups();
-    await updateBadge();
-    message.success(result.data ? '规则组已启用' : '规则组已禁用');
-  };
+  const { runAsync: handleToggleGroupEnabled, loading: toggleGroupLoading } =
+    useRequest(
+      async (groupId: string) => {
+        const ruleApi = ApiFactory.getRuleApi();
+        const result = await ruleApi.toggleGroup(groupId);
+        if (!result.success) {
+          message.error('操作失败: ' + result.error);
+          return;
+        }
+        await loadGroups();
+        await updateBadge();
+        message.success(result.data ? '规则组已启用' : '规则组已禁用');
+      },
+      { manual: true }
+    );
 
   /**
    * 开始编辑规则组名称
@@ -365,101 +356,106 @@ function App() {
         <div className="app-body">
           {/* 左侧规则组列表 */}
           <div className="app-body-sider">
-            <List
-              size="small"
-              dataSource={groups}
-              renderItem={group => (
-                <List.Item
-                  className={`group-item list-item ${
-                    selectedGroupId === group.id ? 'selected' : ''
-                  }`}
-                  onClick={() => setSelectedGroupId(group.id)}
-                  actions={[
-                    <div className="group-item-action" key="group-item-action">
-                      <Tooltip title="编辑规则组名称" key="edit">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<EditOutlined />}
-                          onClick={e => {
-                            e.stopPropagation();
-                            startEditGroupName(group);
-                          }}
-                          className="edit-button"
-                        />
-                      </Tooltip>
-                      <Tooltip title="复制规则并创建一份新规则" key="copy">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<CopyOutlined />}
-                          onClick={e => {
-                            e.stopPropagation();
-                            copyGroupContent(group);
-                          }}
-                        />
-                      </Tooltip>
-                      <Tooltip title="删除规则组" key="delete">
-                        <Button
-                          type="text"
-                          size="small"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDeleteGroup(group.id);
-                          }}
-                        />
-                      </Tooltip>
-                    </div>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={
-                      <div className="group-title-container">
-                        <Checkbox
-                          checked={group.enabled}
-                          onChange={e => {
-                            e.stopPropagation();
-                            handleToggleGroupEnabled(group.id);
-                          }}
-                        />
-                        {editingGroupId === group.id ? (
-                          <Space.Compact>
-                            <Input
-                              value={editingGroupName}
-                              onChange={e =>
-                                setEditingGroupName(e.target.value)
-                              }
-                              onPressEnter={saveGroupName}
-                              onBlur={saveGroupName}
-                              autoFocus
-                              size="small"
-                              className="edit-input"
-                            />
-                          </Space.Compact>
-                        ) : (
-                          <div className="group-title-edit-container">
-                            <Text
-                              className={`group-title-text ${
-                                group.enabled ? 'enabled' : 'disabled'
-                              } ${jsonErrors[group.id] ? 'error' : ''}`}
-                              title={
-                                jsonErrors[group.id]
-                                  ? '存在语法错误'
-                                  : group.groupName
-                              }
-                            >
-                              {group.groupName}
-                            </Text>
-                          </div>
-                        )}
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
+            <Spin spinning={toggleGroupLoading}>
+              <List
+                size="small"
+                dataSource={groups}
+                renderItem={group => (
+                  <List.Item
+                    className={`group-item list-item ${
+                      selectedGroupId === group.id ? 'selected' : ''
+                    }`}
+                    onClick={() => setSelectedGroupId(group.id)}
+                    actions={[
+                      <div
+                        className="group-item-action"
+                        key="group-item-action"
+                      >
+                        <Tooltip title="编辑规则组名称" key="edit">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={e => {
+                              e.stopPropagation();
+                              startEditGroupName(group);
+                            }}
+                            className="edit-button"
+                          />
+                        </Tooltip>
+                        <Tooltip title="复制规则并创建一份新规则" key="copy">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={e => {
+                              e.stopPropagation();
+                              copyGroupContent(group);
+                            }}
+                          />
+                        </Tooltip>
+                        <Tooltip title="删除规则组" key="delete">
+                          <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteGroup(group.id);
+                            }}
+                          />
+                        </Tooltip>
+                      </div>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={
+                        <div className="group-title-container">
+                          <Checkbox
+                            checked={group.enabled}
+                            onChange={e => {
+                              e.stopPropagation();
+                              handleToggleGroupEnabled(group.id);
+                            }}
+                          />
+                          {editingGroupId === group.id ? (
+                            <Space.Compact>
+                              <Input
+                                value={editingGroupName}
+                                onChange={e =>
+                                  setEditingGroupName(e.target.value)
+                                }
+                                onPressEnter={saveGroupName}
+                                onBlur={saveGroupName}
+                                autoFocus
+                                size="small"
+                                className="edit-input"
+                              />
+                            </Space.Compact>
+                          ) : (
+                            <div className="group-title-edit-container">
+                              <Text
+                                className={`group-title-text ${
+                                  group.enabled ? 'enabled' : 'disabled'
+                                } ${jsonErrors[group.id] ? 'error' : ''}`}
+                                title={
+                                  jsonErrors[group.id]
+                                    ? '存在语法错误'
+                                    : group.groupName
+                                }
+                              >
+                                {group.groupName}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </Spin>
           </div>
 
           {/* 右侧编辑器 */}

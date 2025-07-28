@@ -58,8 +58,11 @@ export class Request {
         } else {
           console.error(
             '❌ Request.send API error:',
+            'Type:',
             request.type,
-            response.error
+            'Error:',
+            response.error || 'Unknown error',
+            'Code: API_ERROR'
           );
           return this.createErrorResult(
             response.error || 'API调用失败',
@@ -69,13 +72,23 @@ export class Request {
       } else {
         console.error(
           '❌ Request.send invalid response:',
+          'Type:',
           request.type,
-          response
+          'Response:',
+          response,
+          'Code: RESPONSE_ERROR'
         );
         return this.createErrorResult('API响应格式错误', 'RESPONSE_ERROR');
       }
     } catch (error) {
-      console.error('❌ Request.send network error:', request.type, error);
+      console.error(
+        '❌ Request.send network error:',
+        'Type:',
+        request.type,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: NETWORK_ERROR'
+      );
 
       // 处理不同类型的错误
       if (error instanceof Error) {
@@ -116,7 +129,12 @@ export class Request {
       return results;
     } catch (error) {
       // 这种情况理论上不会发生，因为send方法是no-reject的
-      console.error('❌ Request.sendBatch unexpected error:', error);
+      console.error(
+        '❌ Request.sendBatch unexpected error:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: BATCH_ERROR'
+      );
       return requests.map(() =>
         this.createErrorResult('批量请求失败', 'BATCH_ERROR')
       );
@@ -164,7 +182,10 @@ export class Request {
     console.error(
       '❌ Request.sendWithRetry failed after',
       maxRetries + 1,
-      'attempts'
+      'attempts',
+      'Type:',
+      request.type,
+      'Code: RETRY_EXHAUSTED'
     );
     return this.createErrorResult('请求重试失败', 'RETRY_EXHAUSTED');
   }

@@ -43,14 +43,24 @@ export class ApiService implements MessageSender {
       } else {
         console.error(
           '❌ ApiService.sendMessage failed:',
+          'Type:',
           request.type,
-          response.error
+          'Error:',
+          response.error || 'Unknown error',
+          'Code: API_SERVICE_ERROR'
         );
       }
 
       return response;
     } catch (error) {
-      console.error('❌ ApiService.sendMessage error:', request.type, error);
+      console.error(
+        '❌ ApiService.sendMessage error:',
+        'Type:',
+        request.type,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: API_SERVICE_ERROR'
+      );
 
       return {
         success: false,

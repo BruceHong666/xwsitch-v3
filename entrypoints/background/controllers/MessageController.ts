@@ -103,7 +103,14 @@ export class MessageController implements MessageHandler {
       console.log('✅ MessageController response:', request.type, 'success');
       return response;
     } catch (error) {
-      console.error('❌ MessageController error:', request.type, error);
+      console.error(
+        '❌ MessageController error:',
+        'Type:',
+        request.type,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: CONTROLLER_ERROR'
+      );
 
       const response: ApiResponse = {
         success: false,

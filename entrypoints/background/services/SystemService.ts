@@ -34,7 +34,12 @@ export class SystemService {
       console.log('✅ SystemService.loadGlobalEnabled success:', enabled);
       return enabled;
     } catch (error) {
-      console.error('❌ SystemService.loadGlobalEnabled failed:', error);
+      console.error(
+        '❌ SystemService.loadGlobalEnabled failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: SYSTEM_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -48,7 +53,14 @@ export class SystemService {
       await this.storageDao.saveGlobalEnabled(enabled);
       console.log('✅ SystemService.saveGlobalEnabled success');
     } catch (error) {
-      console.error('❌ SystemService.saveGlobalEnabled failed:', error);
+      console.error(
+        '❌ SystemService.saveGlobalEnabled failed:',
+        'Enabled:',
+        enabled,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: SYSTEM_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -93,7 +105,12 @@ export class SystemService {
 
       console.log('✅ SystemService.updateBadge success');
     } catch (error) {
-      console.error('❌ SystemService.updateBadge failed:', error);
+      console.error(
+        '❌ SystemService.updateBadge failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: SYSTEM_SERVICE_ERROR'
+      );
       this.setBadge('ERR', '#ff4d4f');
     }
   }
@@ -123,7 +140,12 @@ export class SystemService {
 
       console.log('✅ SystemService.updateNetworkRules success');
     } catch (error) {
-      console.error('❌ SystemService.updateNetworkRules failed:', error);
+      console.error(
+        '❌ SystemService.updateNetworkRules failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: SYSTEM_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -142,7 +164,12 @@ export class SystemService {
 
       console.log('✅ SystemService.initialize success');
     } catch (error) {
-      console.error('❌ SystemService.initialize failed:', error);
+      console.error(
+        '❌ SystemService.initialize failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: SYSTEM_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -161,7 +188,12 @@ export class SystemService {
       // 异步更新，避免阻塞
       Promise.all([this.updateBadge(), this.updateNetworkRules()]).catch(
         error => {
-          console.error('❌ Error updating after storage change:', error);
+          console.error(
+            '❌ Error updating after storage change:',
+            'Error:',
+            error instanceof Error ? error.message : String(error),
+            'Code: STORAGE_CHANGE_ERROR'
+          );
         }
       );
     });
@@ -202,7 +234,16 @@ export class SystemService {
         console.warn('⚠️ No badge API available');
       }
     } catch (error) {
-      console.error('❌ Failed to set badge:', error);
+      console.error(
+        '❌ Failed to set badge:',
+        'Text:',
+        text,
+        'Color:',
+        color,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: BADGE_ERROR'
+      );
     }
   }
 }

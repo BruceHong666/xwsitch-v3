@@ -195,7 +195,12 @@ export class StorageDao {
       console.log('📖 StorageDao.loadGroups result:', groups.length);
       return groups;
     } catch (error) {
-      console.error('❌ StorageDao.loadGroups failed:', error);
+      console.error(
+        '❌ StorageDao.loadGroups failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: STORAGE_DAO_ERROR'
+      );
       return []; // 返回空数组而不是抛出错误
     }
   }

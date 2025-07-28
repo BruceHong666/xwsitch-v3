@@ -30,7 +30,12 @@ export class RuleService {
       console.log('✅ RuleService.loadGroups success:', groups.length);
       return groups;
     } catch (error) {
-      console.error('❌ RuleService.loadGroups failed:', error);
+      console.error(
+        '❌ RuleService.loadGroups failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -46,7 +51,14 @@ export class RuleService {
       await this.storageDao.saveGroups(groups);
       console.log('✅ RuleService.saveGroups success');
     } catch (error) {
-      console.error('❌ RuleService.saveGroups failed:', error);
+      console.error(
+        '❌ RuleService.saveGroups failed:',
+        'Groups count:',
+        groups.length,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -62,7 +74,14 @@ export class RuleService {
       await this.storageDao.saveGroup(group);
       console.log('✅ RuleService.saveGroup success');
     } catch (error) {
-      console.error('❌ RuleService.saveGroup failed:', error);
+      console.error(
+        '❌ RuleService.saveGroup failed:',
+        'Group ID:',
+        group.id,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -102,7 +121,14 @@ export class RuleService {
       console.log('✅ RuleService.createGroup success:', newGroup.id);
       return newGroup;
     } catch (error) {
-      console.error('❌ RuleService.createGroup failed:', error);
+      console.error(
+        '❌ RuleService.createGroup failed:',
+        'Group name:',
+        groupName,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -148,7 +174,16 @@ export class RuleService {
       await this.saveGroup(updatedGroup);
       console.log('✅ RuleService.updateGroup success');
     } catch (error) {
-      console.error('❌ RuleService.updateGroup failed:', error);
+      console.error(
+        '❌ RuleService.updateGroup failed:',
+        'Group ID:',
+        groupId,
+        'Updates:',
+        Object.keys(updates),
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -169,7 +204,14 @@ export class RuleService {
       await this.saveGroups(filteredGroups);
       console.log('✅ RuleService.deleteGroup success');
     } catch (error) {
-      console.error('❌ RuleService.deleteGroup failed:', error);
+      console.error(
+        '❌ RuleService.deleteGroup failed:',
+        'Group ID:',
+        groupId,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -193,7 +235,14 @@ export class RuleService {
       console.log('✅ RuleService.toggleGroup success:', newEnabled);
       return newEnabled;
     } catch (error) {
-      console.error('❌ RuleService.toggleGroup failed:', error);
+      console.error(
+        '❌ RuleService.toggleGroup failed:',
+        'Group ID:',
+        groupId,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -209,7 +258,14 @@ export class RuleService {
       console.log('✅ RuleService.getGroup success:', !!group);
       return group;
     } catch (error) {
-      console.error('❌ RuleService.getGroup failed:', error);
+      console.error(
+        '❌ RuleService.getGroup failed:',
+        'Group ID:',
+        groupId,
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -223,7 +279,12 @@ export class RuleService {
       await this.storageDao.clearAll();
       console.log('✅ RuleService.clearAllData success');
     } catch (error) {
-      console.error('❌ RuleService.clearAllData failed:', error);
+      console.error(
+        '❌ RuleService.clearAllData failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
@@ -250,7 +311,12 @@ export class RuleService {
 
       console.log('✅ RuleService.initializeDefaultData success');
     } catch (error) {
-      console.error('❌ RuleService.initializeDefaultData failed:', error);
+      console.error(
+        '❌ RuleService.initializeDefaultData failed:',
+        'Error:',
+        error instanceof Error ? error.message : String(error),
+        'Code: RULE_SERVICE_ERROR'
+      );
       throw error;
     }
   }
