@@ -430,7 +430,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - **Ant Design 5**: Modern, accessible UI components
 - **Responsive Design**: Perfect experience in both popup and tab modes
-- **Dark/Light Theme**: Automatic theme detection and switching
+- **Light Theme**: Clean and consistent light theme design
 - **Improved Accessibility**: Full keyboard navigation and screen reader support
 
 ## 💬 Support

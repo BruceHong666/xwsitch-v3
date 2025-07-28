@@ -185,10 +185,6 @@
   overflow: hidden;
 }
 
-.code-mirror-container.dark {
-  background-color: #282c34;
-}
-
 .code-mirror-container.light {
   background-color: #ffffff;
 }

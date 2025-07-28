@@ -34,20 +34,17 @@ export default defineContentScript({
 
     function handleProxyHit(data: ProxyHitData) {
       const time = new Date(data.timestamp).toLocaleTimeString();
-      
-      // 在页面控制台输出详细的代理日志
-      console.group(`🔀 [XSwitch V3] 代理匹配 - ${time}`);
-      console.log(`📍 当前页面: ${window.location.href}`);
-      console.log(`📥 原始请求: ${data.originalUrl}`);
-      console.log(`📤 代理目标: ${data.targetUrl}`);
-      console.log(`📋 匹配规则: ${data.ruleName}`);
-      console.log(`📊 请求类型: ${data.requestType}`);
-      console.log(`🔧 请求方法: ${data.method}`);
-      console.log(`⏰ 匹配时间: ${time}`);
-      console.groupEnd();
+
+      // 在页面控制台输出精简的代理日志
+      console.log(
+        `🔀 [XSwitch V3] 代理匹配 | 规则: ${data.ruleName} | 原始: ${data.originalUrl} | 目标: ${data.targetUrl}`
+      );
 
       // 可选：在页面上显示简单的通知
-      if (data.requestType === 'main_frame' || data.requestType === 'xmlhttprequest') {
+      if (
+        data.requestType === 'main_frame' ||
+        data.requestType === 'xmlhttprequest'
+      ) {
         showProxyNotification(data);
       }
     }
@@ -70,7 +67,7 @@ export default defineContentScript({
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: opacity 0.3s ease;
       `;
-      
+
       notification.innerHTML = `
         <div style="font-weight: bold; margin-bottom: 4px;">🔀 XSwitch 代理匹配</div>
         <div style="font-size: 12px;">规则: ${data.ruleName}</div>

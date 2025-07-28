@@ -194,7 +194,9 @@ export class SystemService {
       if (typeof browser !== 'undefined' && browser.action) {
         console.log('🌐 Using browser.action API');
         browser.action.setBadgeText({ text });
-        browser.action.setBadgeBackgroundColor({ color });
+        if (color) {
+          browser.action.setBadgeBackgroundColor({ color });
+        }
         console.log('✅ Badge set successfully via browser.action');
       } else {
         console.warn('⚠️ No badge API available');

@@ -4,7 +4,16 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    permissions: ['storage', 'tabs', 'scripting', 'declarativeNetRequest', 'webRequest'],
+    name: 'Switch V3',
+    description:
+      'HTTP request forwarding with string matching and regex support. A modern rewrite of xswitch for Manifest V3 compatibility.',
+    permissions: [
+      'storage',
+      'tabs',
+      'scripting',
+      'declarativeNetRequest',
+      'webRequest',
+    ],
     host_permissions: ['<all_urls>'],
   },
 });
