@@ -33,11 +33,12 @@ export default defineContentScript({
     }
 
     function handleProxyHit(data: ProxyHitData) {
-      const time = new Date(data.timestamp).toLocaleTimeString();
-
       // 在页面控制台输出精简的代理日志
       console.log(
-        `🔀 [XSwitch V3] 代理匹配 | 规则: ${data.ruleName} | 原始: ${data.originalUrl} | 目标: ${data.targetUrl}`
+        `🔀 [XSwitch V3] 代理匹配
+        | 规则: ${data.ruleName}
+        | 原始: ${data.originalUrl}
+        | 目标: ${data.targetUrl}`
       );
 
       // 可选：在页面上显示简单的通知

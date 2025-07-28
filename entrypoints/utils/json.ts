@@ -18,7 +18,7 @@ export const parseJsonWithComments = (jsonString: string) => {
   } catch {
     // 如果标准JSON解析失败，使用JSON5解析（支持注释、尾随逗号等）
     const json = JSON5.parse(originalJson);
-    console.log(JSON.stringify({ originalJson, json }, null, 2));
+    console.log(JSON.stringify(json, null, 2));
     return json;
   }
 };
@@ -71,51 +71,58 @@ export const parseRuleGroup = (
 
   try {
     const config = parseJsonWithComments(ruleText);
-    
+
     // 处理proxy规则
     let proxyRules: ProxyRule[] = [];
     if (config.proxy && Array.isArray(config.proxy)) {
-      proxyRules = config.proxy.map((rule: unknown, index: number): ProxyRule => {
-        // 兼容xswitch的数组格式 [source, target]
-        if (Array.isArray(rule) && rule.length >= 2) {
+      proxyRules = config.proxy.map(
+        (rule: unknown, index: number): ProxyRule => {
+          // 兼容xswitch的数组格式 [source, target]
+          if (Array.isArray(rule) && rule.length >= 2) {
+            return {
+              id: `proxy_${index}`,
+              name: `Rule ${index + 1}`,
+              enabled: true,
+              source: rule[0],
+              target: rule[1],
+              type: 'string' as const,
+            };
+          }
+          // 标准对象格式
+          if (
+            typeof rule === 'object' &&
+            rule &&
+            'source' in rule &&
+            'target' in rule
+          ) {
+            const ruleObj = rule as {
+              id?: string;
+              name?: string;
+              enabled?: boolean;
+              source: string;
+              target: string;
+              type?: 'string' | 'regex';
+            };
+            return {
+              id: ruleObj.id || `proxy_${index}`,
+              name: ruleObj.name || `Rule ${index + 1}`,
+              enabled: ruleObj.enabled !== false,
+              source: ruleObj.source,
+              target: ruleObj.target,
+              type: ruleObj.type || 'string',
+            };
+          }
+          // 兼容其他格式，返回默认规则
           return {
             id: `proxy_${index}`,
             name: `Rule ${index + 1}`,
-            enabled: true,
-            source: rule[0],
-            target: rule[1],
-            type: 'string' as const
+            enabled: false,
+            source: '',
+            target: '',
+            type: 'string' as const,
           };
         }
-        // 标准对象格式
-        if (typeof rule === 'object' && rule && 'source' in rule && 'target' in rule) {
-          const ruleObj = rule as { 
-            id?: string; 
-            name?: string; 
-            enabled?: boolean; 
-            source: string; 
-            target: string; 
-            type?: 'string' | 'regex' 
-          };
-          return {
-            id: ruleObj.id || `proxy_${index}`,
-            name: ruleObj.name || `Rule ${index + 1}`,
-            enabled: ruleObj.enabled !== false,
-            source: ruleObj.source,
-            target: ruleObj.target,
-            type: ruleObj.type || 'string'
-          };
-        }
-        // 兼容其他格式，返回默认规则
-        return {
-          id: `proxy_${index}`,
-          name: `Rule ${index + 1}`,
-          enabled: false,
-          source: '',
-          target: '',
-          type: 'string' as const
-        };
-      });
+      );
     }
 
     // 处理cors规则
@@ -127,23 +134,27 @@ export const parseRuleGroup = (
           return {
             id: `cors_${index}`,
             pattern: rule,
-            enabled: true
+            enabled: true,
           };
         }
         // 标准对象格式
         if (typeof rule === 'object' && rule && 'pattern' in rule) {
-          const ruleObj = rule as { id?: string; pattern: string; enabled?: boolean };
+          const ruleObj = rule as {
+            id?: string;
+            pattern: string;
+            enabled?: boolean;
+          };
           return {
             id: ruleObj.id || `cors_${index}`,
             pattern: ruleObj.pattern,
-            enabled: ruleObj.enabled !== false
+            enabled: ruleObj.enabled !== false,
           };
         }
         // 默认格式
         return {
           id: `cors_${index}`,
           pattern: '',
-          enabled: false
+          enabled: false,
         };
       });
     }

@@ -147,6 +147,175 @@ describe('NetworkService', () => {
     });
   });
 
+  describe('regexSubstitution 转换', () => {
+    it('应该正确转换 $1, $2 为 Chrome 格式', () => {
+      const testCases = [
+        {
+          source: 'https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*)',
+          target: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/$2',
+          expectedSubstitution: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/\\2'
+        },
+        {
+          source: 'https://example.com/(.*)/old/(.*)',
+          target: 'https://example.com/$1/new/$2',
+          expectedSubstitution: 'https://example.com/\\1/new/\\2'
+        },
+        {
+          source: 'https://cdn.example.com/v([0-9.]+)/(.*)',
+          target: 'https://cdn.example.com/v2.0.0/$2',
+          expectedSubstitution: 'https://cdn.example.com/v2.0.0/\\2'
+        },
+        {
+          source: '(.*).staging.example.com',
+          target: '$1.prod.example.com',
+          expectedSubstitution: '\\1.prod.example.com'
+        }
+      ];
+
+      testCases.forEach(({ source, target, expectedSubstitution }) => {
+        // @ts-ignore - 访问私有方法
+        const redirect = networkService.convertToRedirect(source, target);
+        
+        expect(redirect).toBeDefined();
+        expect(redirect?.regexSubstitution).toBe(expectedSubstitution);
+      });
+    });
+
+    it('应该为没有捕获组的目标返回直接 URL', () => {
+      const source = 'https://example.com/path';
+      const target = 'https://newdomain.com/path';
+      
+      // @ts-ignore
+      const redirect = networkService.convertToRedirect(source, target);
+      
+      expect(redirect).toBeDefined();
+      expect(redirect?.url).toBe(target);
+      expect(redirect?.regexSubstitution).toBeUndefined();
+    });
+
+    it('应该正确处理用户实际案例', () => {
+      // 用户的实际配置
+      const source = 'https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*)';
+      const target = 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/$2';
+      
+      // @ts-ignore
+      const redirect = networkService.convertToRedirect(source, target);
+      
+      expect(redirect).toBeDefined();
+      expect(redirect?.regexSubstitution).toBe('https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/\\2');
+      
+      // 验证生成的规则格式
+      const expectedRule = {
+        regexSubstitution: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/\\2'
+      };
+      
+      expect(redirect).toEqual(expectedRule);
+    });
+
+    it('应该正确生成 regexFilter', () => {
+      const testCases = [
+        {
+          source: 'https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*)',
+          expectedFilter: '^https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*?)$'
+        },
+        {
+          source: 'https://example.com/(.*)/old/(.*)',
+          expectedFilter: '^https://example.com/(.*?)/old/(.*?)$'
+        },
+        {
+          source: '(.*).staging.example.com',
+          expectedFilter: '^(.*?).staging.example.com$'
+        }
+      ];
+
+      testCases.forEach(({ source, expectedFilter }) => {
+        // @ts-ignore - 访问私有方法
+        const regexFilter = networkService.convertToRegexFilter(source);
+        
+        expect(regexFilter).toBe(expectedFilter);
+      });
+    });
+
+    it('应该生成正确的 declarativeNetRequest 规则', () => {
+      // 用户实际案例的规则
+      const proxyRule = {
+        id: 'test-regex',
+        name: '版本号替换测试',
+        enabled: true,
+        source: 'https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*)',
+        target: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/$2',
+        type: 'regex' as const
+      };
+
+      // @ts-ignore - 访问私有方法
+      const rules = networkService.generateProxyRules([proxyRule]);
+      
+      expect(rules).toHaveLength(1);
+      
+      const rule = rules[0];
+      expect(rule.action.type).toBe('redirect');
+      expect(rule.action.redirect?.regexSubstitution).toBe('https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/\\2');
+      expect(rule.condition.regexFilter).toBe('^https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*?)$');
+      expect(rule.condition.urlFilter).toBeUndefined(); // 使用 regexFilter 时不应有 urlFilter
+    });
+
+    it('应该区分 regexFilter 和 urlFilter 的使用场景', () => {
+      const testCases = [
+        {
+          name: '有捕获组和$替换的规则应该使用regexFilter',
+          rule: {
+            id: 'regex-rule',
+            name: 'Regex Rule',
+            enabled: true,
+            source: 'https://example.com/(.*)/(.*)',
+            target: 'https://newdomain.com/$1/$2',
+            type: 'regex' as const
+          },
+          expectedRegexFilter: '^https://example.com/(.*?)/(.*?)$',
+          expectedRegexSubstitution: 'https://newdomain.com/\\1/\\2',
+          shouldHaveUrlFilter: false
+        },
+        {
+          name: '无捕获组的规则应该使用urlFilter',
+          rule: {
+            id: 'url-rule',
+            name: 'URL Rule',
+            enabled: true,
+            source: 'https://example.com/api',
+            target: 'https://newdomain.com/api',
+            type: 'string' as const
+          },
+          expectedUrl: 'https://newdomain.com/api',
+          shouldHaveRegexFilter: false
+        }
+      ];
+
+      testCases.forEach(({ name, rule, expectedRegexFilter, expectedRegexSubstitution, expectedUrl, shouldHaveUrlFilter, shouldHaveRegexFilter }) => {
+        // @ts-ignore
+        const rules = networkService.generateProxyRules([rule]);
+        
+        expect(rules).toHaveLength(1);
+        
+        const generatedRule = rules[0];
+        
+        if (expectedRegexFilter) {
+          expect(generatedRule.condition.regexFilter).toBe(expectedRegexFilter);
+          expect(generatedRule.action.redirect?.regexSubstitution).toBe(expectedRegexSubstitution);
+          if (shouldHaveUrlFilter === false) {
+            expect(generatedRule.condition.urlFilter).toBeUndefined();
+          }
+        }
+        
+        if (expectedUrl) {
+          expect(generatedRule.action.redirect?.url).toBe(expectedUrl);
+          if (shouldHaveRegexFilter === false) {
+            expect(generatedRule.condition.regexFilter).toBeUndefined();
+          }
+        }
+      });
+    });
+  });
+
   describe('代理规则生成', () => {
     it('应该正确生成代理规则', () => {
       const proxyRules = testRuleConfigs.basic.proxy;

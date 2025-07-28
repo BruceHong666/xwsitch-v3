@@ -136,7 +136,6 @@ export class SystemService {
       );
 
       await networkService.updateRules(groups, globalEnabled);
-      networkService.setupNetworkLogging(globalEnabled, groups);
 
       console.log('✅ SystemService.updateNetworkRules success');
     } catch (error) {

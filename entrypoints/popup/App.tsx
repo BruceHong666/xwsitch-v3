@@ -68,11 +68,13 @@ function App() {
 
   // 更新徽章
   const { runAsync: updateBadge } = useRequest(async () => {
-    const systemApi = ApiFactory.getSystemApi();
-    const badgeResult = await systemApi.updateBadge();
-    if (!badgeResult.success) {
-      console.warn('⚠️ 更新徽章失败:', badgeResult.error);
-    }
+    // 已经全局监听，无需手动触发
+    return Promise.resolve();
+    // const systemApi = ApiFactory.getSystemApi();
+    // const badgeResult = await systemApi.updateBadge();
+    // if (!badgeResult.success) {
+    //   console.warn('⚠️ 更新徽章失败:', badgeResult.error);
+    // }
   });
 
   // 初始化数据
@@ -123,7 +125,6 @@ function App() {
   const { run: debouncedSaveGroups } = useDebounceFn(
     async (newGroups: GroupRuleVo) => {
       const ruleApi = ApiFactory.getRuleApi();
-      const systemApi = ApiFactory.getSystemApi();
 
       const saveResult = await ruleApi.saveGroup(newGroups);
       if (!saveResult.success) {
@@ -133,10 +134,7 @@ function App() {
       }
       await loadGroups();
       // 更新徽章
-      const badgeResult = await systemApi.updateBadge();
-      if (!badgeResult.success) {
-        console.warn('⚠️ 更新徽章失败:', badgeResult.error);
-      }
+      await updateBadge();
 
       console.log('✅ 规则组保存成功');
     },
@@ -345,9 +343,8 @@ function App() {
               <Button
                 type="link"
                 icon={<QuestionCircleOutlined />}
-                onClick={() =>
-                  window.open('https://github.com/yize/xswitch', '_blank')
-                }
+                href="https://github.com/BruceHong666/xwsitch-v3/blob/master/README-zh.md"
+                target="_blank"
               />
             </Tooltip>
           </div>
