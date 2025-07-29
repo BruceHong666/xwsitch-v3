@@ -131,8 +131,17 @@ export class NetworkService {
 
           if (isRegexPattern && redirect.regexSubstitution) {
             // 使用regexFilter而不是urlFilter
-            condition.regexFilter = this.convertToRegexFilter(rule.source);
-            console.log('📋 Using regexFilter:', condition.regexFilter);
+            const regexFilter = this.convertToRegexFilter(rule.source);
+            if (regexFilter) {
+              condition.regexFilter = regexFilter;
+              console.log('📋 Using regexFilter:', condition.regexFilter);
+            } else {
+              // 如果regexFilter转换失败，回退到urlFilter并清除regexSubstitution
+              console.warn('⚠️ RegexFilter conversion failed, falling back to urlFilter');
+              condition.urlFilter = this.convertToUrlFilter(rule.source);
+              redirect = { url: rule.target }; // 清除regexSubstitution，使用简单URL重定向
+              console.log('📋 Fallback to urlFilter:', condition.urlFilter);
+            }
           } else {
             // 使用urlFilter
             condition.urlFilter = this.convertToUrlFilter(rule.source);
