@@ -265,6 +265,8 @@ function App() {
       return;
     }
     await loadGroups();
+    setEditingGroupId('');
+    setEditingGroupName('');
     message.success('规则组名称更新成功');
   };
 
