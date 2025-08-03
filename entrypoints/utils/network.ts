@@ -107,7 +107,7 @@ export class NetworkService {
           console.log('🔧 Detected negative lookbehind in rule:', rule.source);
           // 为负向断言创建特殊规则
           const specialRules = this.createNegativeLookbehindRules(rule);
-          allRules.push(...specialRules);
+          rules.push(...specialRules);
           return; // 在forEach中使用return而不是continue
         }
 
