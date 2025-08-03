@@ -166,10 +166,19 @@ function App() {
    */
   const handleEditorChange = useMemoizedFn((value: string) => {
     setEditorValue(value);
+    
+    // 确保选中了有效的规则组
+    const currentGroup = groups?.find(group => group.id === selectedGroupId);
+    if (!currentGroup) {
+      console.warn('⚠️ No group selected, cannot save content');
+      return;
+    }
+    
     // 使用防抖保存
     debouncedSaveGroups({
-      ...selectedGroup,
+      ...currentGroup,
       ruleText: value,
+      updateTime: new Date().toISOString(),
     });
   });
 
@@ -213,6 +222,11 @@ function App() {
         if (!result.success) {
           message.error('删除失败: ' + result.error);
           return;
+        }
+        // 如果删除的是当前选中的规则组，清空选中状态
+        if (selectedGroupId === groupId) {
+          setSelectedGroupId('');
+          setEditorValue('');
         }
         await loadGroups();
         await updateBadge();
