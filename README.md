@@ -57,7 +57,7 @@ A modern HTTP request forwarding and debugging tool for developers, built with R
 4. Load the extension in Chrome
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" in the top right
-   - Click "Load unpacked" and select the `.output` folder
+   - Click "Load unpacked" and select the `dist` folder
 
 ### Development
 

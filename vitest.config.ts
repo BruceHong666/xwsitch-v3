@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
-    exclude: ['node_modules', 'dist', '.output'],
+    exclude: ['node_modules', 'dist'],
     timeout: 10000,
     testTimeout: 10000,
     hookTimeout: 10000,
@@ -31,7 +31,6 @@ export default defineConfig({
         'node_modules',
         'tests',
         'dist',
-        '.output',
         '**/*.d.ts',
         '**/*.config.ts'
       ],

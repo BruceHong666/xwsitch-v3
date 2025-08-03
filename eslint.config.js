@@ -9,7 +9,6 @@ export default [
   js.configs.recommended,
   {
     ignores: [
-      '.output/**',
       '.wxt/**',
       'node_modules/**',
       'dist/**',
