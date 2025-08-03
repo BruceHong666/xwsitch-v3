@@ -166,14 +166,14 @@ function App() {
    */
   const handleEditorChange = useMemoizedFn((value: string) => {
     setEditorValue(value);
-    
+
     // 确保选中了有效的规则组
     const currentGroup = groups?.find(group => group.id === selectedGroupId);
     if (!currentGroup) {
       console.warn('⚠️ No group selected, cannot save content');
       return;
     }
-    
+
     // 使用防抖保存
     debouncedSaveGroups({
       ...currentGroup,
@@ -245,6 +245,8 @@ function App() {
         const result = await ruleApi.toggleGroup(groupId);
         if (!result.success) {
           message.error('操作失败: ' + result.error);
+          // 操作失败时重新加载数据恢复状态
+          await loadGroups();
           return;
         }
         await loadGroups();
@@ -427,6 +429,7 @@ function App() {
                         <div className="group-title-container">
                           <Checkbox
                             checked={group.enabled}
+                            disabled={toggleGroupLoading}
                             onChange={e => {
                               e.stopPropagation();
                               handleToggleGroupEnabled(group.id);
