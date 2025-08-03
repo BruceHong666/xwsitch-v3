@@ -25,7 +25,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { GroupRuleVo } from '../../types';
 import { DEFAULT_NEW_RULE } from '../utils/const';
 import { validateJsonFormat } from '../utils/json';
-import { ApiFactory } from './api';
+import {
+  loadGroupsRequest,
+  saveGroupRequest,
+  createGroupRequest,
+  deleteGroupRequest,
+  toggleGroupRequest,
+  updateGroupRequest,
+  loadGlobalEnabledRequest,
+  saveGlobalEnabledRequest,
+  initializeDefaultDataRequest,
+} from './api';
 import './App.css';
 import CodeMirrorEditor from './components/code-mirror-editor';
 
@@ -47,8 +57,10 @@ function App() {
 
   // 加载规则组
   const { data: groups = [], runAsync: loadGroups } = useRequest(async () => {
-    const ruleApi = ApiFactory.getRuleApi();
-    const groupResult = await ruleApi.loadGroups();
+    const groupResult = await loadGroupsRequest();
+    if (!groupResult.success) {
+      throw new Error(groupResult.error || '加载规则组失败');
+    }
     return groupResult.data || [];
   });
 
@@ -60,8 +72,10 @@ function App() {
   // 加载全局启用状态
   const { data: globalEnabled, runAsync: loadGlobalEnabled } = useRequest(
     async () => {
-      const systemApi = ApiFactory.getSystemApi();
-      const globalEnabledResult = await systemApi.loadGlobalEnabled();
+      const globalEnabledResult = await loadGlobalEnabledRequest();
+      if (!globalEnabledResult.success) {
+        throw new Error(globalEnabledResult.error || '加载全局状态失败');
+      }
       return globalEnabledResult.data ?? true;
     }
   );
@@ -79,8 +93,7 @@ function App() {
 
   // 初始化数据
   useRequest(async () => {
-    const systemApi = ApiFactory.getSystemApi();
-    const initResult = await systemApi.initializeDefaultData();
+    const initResult = await initializeDefaultDataRequest();
     if (!initResult.success) {
       message.error(`⚠️ 初始化默认数据失败:${initResult.error ?? ''}`);
       return;
@@ -124,9 +137,7 @@ function App() {
    */
   const { run: debouncedSaveGroups } = useDebounceFn(
     async (newGroups: GroupRuleVo) => {
-      const ruleApi = ApiFactory.getRuleApi();
-
-      const saveResult = await ruleApi.saveGroup(newGroups);
+      const saveResult = await saveGroupRequest(newGroups);
       if (!saveResult.success) {
         console.error('❌ 保存规则组失败:', saveResult.error);
         message.error('保存失败: ' + saveResult.error);
@@ -147,9 +158,7 @@ function App() {
   const handleGlobalEnabledChange = async (enabled: boolean) => {
     console.log('🔄 处理全局启用状态变更:', enabled);
 
-    const systemApi = ApiFactory.getSystemApi();
-
-    const saveResult = await systemApi.saveGlobalEnabled(enabled);
+    const saveResult = await saveGlobalEnabledRequest(enabled);
     if (!saveResult.success) {
       console.error('❌ 保存全局状态失败:', saveResult.error);
       return {
@@ -190,8 +199,7 @@ function App() {
       message.error('请输入规则组名称');
       return;
     }
-    const ruleApi = ApiFactory.getRuleApi();
-    const result = await ruleApi.createGroup(
+    const result = await createGroupRequest(
       newGroupName.trim(),
       DEFAULT_NEW_RULE
     );
@@ -217,8 +225,7 @@ function App() {
       title: '确认删除',
       content: `确定要删除规则组"${group.groupName}"吗？此操作不可恢复。`,
       onOk: async () => {
-        const ruleApi = ApiFactory.getRuleApi();
-        const result = await ruleApi.deleteGroup(groupId);
+        const result = await deleteGroupRequest(groupId);
         if (!result.success) {
           message.error('删除失败: ' + result.error);
           return;
@@ -241,8 +248,7 @@ function App() {
   const { runAsync: handleToggleGroupEnabled, loading: toggleGroupLoading } =
     useRequest(
       async (groupId: string) => {
-        const ruleApi = ApiFactory.getRuleApi();
-        const result = await ruleApi.toggleGroup(groupId);
+        const result = await toggleGroupRequest(groupId);
         if (!result.success) {
           message.error('操作失败: ' + result.error);
           // 操作失败时重新加载数据恢复状态
@@ -272,8 +278,7 @@ function App() {
       message.error('规则组名称不能为空');
       return;
     }
-    const ruleApi = ApiFactory.getRuleApi();
-    const result = await ruleApi.updateGroup(editingGroupId, {
+    const result = await updateGroupRequest(editingGroupId, {
       groupName: editingGroupName.trim(),
     });
     if (!result.success) {
@@ -290,8 +295,7 @@ function App() {
    * 复制规则组内容
    */
   const copyGroupContent = async (group: GroupRuleVo) => {
-    const ruleApi = ApiFactory.getRuleApi();
-    const result = await ruleApi.createGroup(
+    const result = await createGroupRequest(
       `${group.groupName}-copy`,
       group.ruleText
     );

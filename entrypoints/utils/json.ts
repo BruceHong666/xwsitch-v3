@@ -18,7 +18,6 @@ export const parseJsonWithComments = (jsonString: string) => {
   } catch {
     // 如果标准JSON解析失败，使用JSON5解析（支持注释、尾随逗号等）
     const json = JSON5.parse(originalJson);
-    console.log(JSON.stringify(json, null, 2));
     return json;
   }
 };

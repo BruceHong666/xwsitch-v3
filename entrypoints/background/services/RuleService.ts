@@ -25,10 +25,8 @@ export class RuleService {
    * 加载所有规则组
    */
   async loadGroups(): Promise<GroupRuleVo[]> {
-    console.log('🔄 RuleService.loadGroups');
     try {
       const groups = await this.storageDao.loadGroups();
-      console.log('✅ RuleService.loadGroups success:', groups.length);
       return groups;
     } catch (error) {
       console.error(
@@ -45,12 +43,10 @@ export class RuleService {
    * 保存所有规则组
    */
   async saveGroups(groups: GroupRuleVo[]): Promise<void> {
-    console.log('🔄 RuleService.saveGroups:', groups.length);
     try {
       // 验证规则组数据
       this.validateGroups(groups);
       await this.storageDao.saveGroups(groups);
-      console.log('✅ RuleService.saveGroups success');
     } catch (error) {
       console.error(
         '❌ RuleService.saveGroups failed:',
@@ -68,12 +64,10 @@ export class RuleService {
    * 保存单个规则组
    */
   async saveGroup(group: GroupRuleVo): Promise<void> {
-    console.log('🔄 RuleService.saveGroup:', group.id);
     try {
       // 验证单个规则组数据
       this.validateGroup(group);
       await this.storageDao.saveGroup(group);
-      console.log('✅ RuleService.saveGroup success');
     } catch (error) {
       console.error(
         '❌ RuleService.saveGroup failed:',
@@ -94,7 +88,6 @@ export class RuleService {
     groupName: string,
     ruleText: string = DEFAULT_NEW_RULE
   ): Promise<GroupRuleVo> {
-    console.log('🔄 RuleService.createGroup:', groupName);
     try {
       // 验证输入参数
       if (!groupName.trim()) {
@@ -119,7 +112,6 @@ export class RuleService {
       const updatedGroups = [...existingGroups, newGroup];
       await this.saveGroups(updatedGroups);
 
-      console.log('✅ RuleService.createGroup success:', newGroup.id);
       return newGroup;
     } catch (error) {
       console.error(
@@ -141,7 +133,6 @@ export class RuleService {
     groupId: string,
     updates: Partial<GroupRuleVo>
   ): Promise<void> {
-    console.log('🔄 RuleService.updateGroup:', groupId, Object.keys(updates));
     try {
       const groups = await this.loadGroups();
       const groupIndex = groups.findIndex(group => group.id === groupId);
@@ -173,7 +164,6 @@ export class RuleService {
       };
 
       await this.saveGroup(updatedGroup);
-      console.log('✅ RuleService.updateGroup success');
     } catch (error) {
       console.error(
         '❌ RuleService.updateGroup failed:',
@@ -193,7 +183,6 @@ export class RuleService {
    * 删除规则组
    */
   async deleteGroup(groupId: string): Promise<void> {
-    console.log('🔄 RuleService.deleteGroup:', groupId);
     try {
       const groups = await this.loadGroups();
       const filteredGroups = groups.filter(group => group.id !== groupId);
@@ -203,7 +192,6 @@ export class RuleService {
       }
 
       await this.saveGroups(filteredGroups);
-      console.log('✅ RuleService.deleteGroup success');
     } catch (error) {
       console.error(
         '❌ RuleService.deleteGroup failed:',
@@ -221,7 +209,6 @@ export class RuleService {
    * 切换规则组启用状态
    */
   async toggleGroup(groupId: string): Promise<boolean> {
-    console.log('🔄 RuleService.toggleGroup:', groupId);
     try {
       const groups = await this.loadGroups();
       const group = groups.find(g => g.id === groupId);
@@ -233,7 +220,6 @@ export class RuleService {
       const newEnabled = !group.enabled;
       await this.updateGroup(groupId, { enabled: newEnabled });
 
-      console.log('✅ RuleService.toggleGroup success:', newEnabled);
       return newEnabled;
     } catch (error) {
       console.error(
@@ -252,11 +238,9 @@ export class RuleService {
    * 获取指定规则组
    */
   async getGroup(groupId: string): Promise<GroupRuleVo | null> {
-    console.log('🔄 RuleService.getGroup:', groupId);
     try {
       const groups = await this.loadGroups();
       const group = groups.find(group => group.id === groupId) || null;
-      console.log('✅ RuleService.getGroup success:', !!group);
       return group;
     } catch (error) {
       console.error(
@@ -275,10 +259,8 @@ export class RuleService {
    * 清除所有数据
    */
   async clearAllData(): Promise<void> {
-    console.log('🔄 RuleService.clearAllData');
     try {
       await this.storageDao.clearAll();
-      console.log('✅ RuleService.clearAllData success');
     } catch (error) {
       console.error(
         '❌ RuleService.clearAllData failed:',
@@ -294,23 +276,18 @@ export class RuleService {
    * 初始化默认数据
    */
   async initializeDefaultData(): Promise<void> {
-    console.log('🔄 RuleService.initializeDefaultData');
     try {
       // 检查是否已有全局启用状态设置
       const hasGlobalEnabled = await this.storageDao.hasGlobalEnabled();
       if (!hasGlobalEnabled) {
-        console.log('💾 Setting default global enabled state to true');
         await this.storageDao.saveGlobalEnabled(true);
       }
 
       // 检查是否已有规则组
       const groups = await this.loadGroups();
       if (groups.length === 0) {
-        console.log('💾 Creating default rule group with DEFAULT_RULE');
         await this.createGroup('默认规则组', DEFAULT_RULE);
       }
-
-      console.log('✅ RuleService.initializeDefaultData success');
     } catch (error) {
       console.error(
         '❌ RuleService.initializeDefaultData failed:',

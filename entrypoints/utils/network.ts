@@ -77,7 +77,6 @@ export class NetworkService {
         const proxyRules = this.generateProxyRules(parsedRules.proxy || []);
         const corsRules = this.generateCorsRules(parsedRules.cors || []);
 
-        console.log(`📋 Generated ${proxyRules.length} proxy rules and ${corsRules.length} CORS rules for group: ${group.groupName}`);
         allRules.push(...proxyRules, ...corsRules);
       } catch (error) {
         console.error(
@@ -104,7 +103,6 @@ export class NetworkService {
         // 检查是否包含需要特殊处理的负向断言
         const hasNegativeLookbehind = rule.source.includes('(?<!');
         if (hasNegativeLookbehind) {
-          console.log('🔧 Detected negative lookbehind in rule:', rule.source);
           // 为负向断言创建特殊规则
           const specialRules = this.createNegativeLookbehindRules(rule);
           rules.push(...specialRules);
@@ -146,18 +144,14 @@ export class NetworkService {
             const regexFilter = this.convertToRegexFilter(rule.source);
             if (regexFilter) {
               condition.regexFilter = regexFilter;
-              console.log('📋 Using regexFilter:', condition.regexFilter);
             } else {
               // 如果regexFilter转换失败，回退到urlFilter并清除regexSubstitution
-              console.warn('⚠️ RegexFilter conversion failed, falling back to urlFilter');
               condition.urlFilter = this.convertToUrlFilter(rule.source);
               redirect = { url: rule.target }; // 清除regexSubstitution，使用简单URL重定向
-              console.log('📋 Fallback to urlFilter:', condition.urlFilter);
             }
           } else {
             // 使用urlFilter
             condition.urlFilter = this.convertToUrlFilter(rule.source);
-            console.log('📋 Using urlFilter:', condition.urlFilter);
           }
 
           rules.push({
@@ -172,7 +166,6 @@ export class NetworkService {
         } else {
           // 如果redirect转换失败，记录错误但继续处理其他规则
           const errorMsg = `Failed to convert redirect for rule: ${rule.source} -> ${rule.target}`;
-          console.warn('⚠️', errorMsg);
           this.ruleErrors.push({
             rule: rule,
             error: errorMsg,
@@ -250,7 +243,6 @@ export class NetworkService {
         } else {
           // 如果urlFilter转换失败，记录错误但继续处理其他规则
           const errorMsg = `Failed to convert URL filter for CORS rule: ${rule.source}`;
-          console.warn('⚠️', errorMsg);
           this.ruleErrors.push({
             rule: rule,
             error: errorMsg,
@@ -274,12 +266,10 @@ export class NetworkService {
 
   private convertToRegexFilter(source: string): string | undefined {
     try {
-      console.log('🔧 Converting regex filter for source:', source);
       
       // 尝试转换不支持的正则语法
       let regexFilter = this.convertUnsupportedRegexSyntax(source);
       if (!regexFilter) {
-        console.warn('⚠️ Cannot convert unsupported regex syntax:', source);
         return undefined;
       }
       
@@ -294,7 +284,6 @@ export class NetworkService {
       // 将贪婪匹配 (.*) 转换为非贪婪匹配 (.*?) 以提高匹配精度
       regexFilter = regexFilter.replace(/\(\.\*\)/g, '(.*?)');
       
-      console.log('📋 Regex filter:', regexFilter);
       return regexFilter;
     } catch (error) {
       console.error('❌ Failed to convert regex filter:', source, error);
@@ -304,7 +293,6 @@ export class NetworkService {
 
   private convertUnsupportedRegexSyntax(source: string): string | undefined {
     try {
-      console.log('🔧 Converting unsupported regex syntax for:', source);
       
       let converted = source;
       
@@ -313,7 +301,6 @@ export class NetworkService {
       const negativeLookbehindMatch = converted.match(/\(\?\<\!([^)]+)\)\$?$/);
       if (negativeLookbehindMatch) {
         const excludePattern = negativeLookbehindMatch[1];
-        console.log('🔧 Found negative lookbehind, exclude pattern:', excludePattern);
         
         // 移除负向后行断言
         converted = converted.replace(/\(\?\<\![^)]+\)\$?$/, '');
@@ -322,7 +309,6 @@ export class NetworkService {
         if (excludePattern.includes('\\.')) {
           // 处理文件扩展名排除，如 (?<!\.json)
           const extension = excludePattern.replace(/\\\./g, '.');
-          console.log('🔧 Excluding file extension:', extension);
           
           // 转换为正向匹配：匹配不以该扩展名结尾的文件
           // 这是一个简化的实现，可能需要根据具体需求调整
@@ -332,7 +318,6 @@ export class NetworkService {
           
           // 将 (.*)$ 转换为 (.*?)(?!\\.json$)
           // 但由于Chrome不支持负向先行断言，我们需要用其他方式
-          console.warn('⚠️ Negative lookbehind for file extensions requires special handling');
           
           // 返回undefined，让调用方使用urlFilter + 额外逻辑处理
           return undefined;
@@ -348,12 +333,10 @@ export class NetworkService {
       
       for (const pattern of unsupportedPatterns) {
         if (pattern.test(converted)) {
-          console.warn('⚠️ Still contains unsupported regex syntax:', converted);
-          return undefined;
+            return undefined;
         }
       }
       
-      console.log('📋 Converted regex:', converted);
       return converted;
       
     } catch (error) {
@@ -364,27 +347,22 @@ export class NetworkService {
 
   private createNegativeLookbehindRules(rule: ProxyRule): chrome.declarativeNetRequest.Rule[] {
     try {
-      console.log('🔧 Creating negative lookbehind rules for:', rule.source);
       
       const rules: chrome.declarativeNetRequest.Rule[] = [];
       
       // 解析负向后行断言
       const match = rule.source.match(/^(.*?)\(\?\<\!([^)]+)\)\$?$/);
       if (!match) {
-        console.warn('⚠️ Could not parse negative lookbehind pattern:', rule.source);
         return [];
       }
       
       const basePattern = match[1];
       const excludePattern = match[2];
       
-      console.log('📋 Base pattern:', basePattern);
-      console.log('📋 Exclude pattern:', excludePattern);
       
       // 如果排除的是文件扩展名（如 \.json）
       if (excludePattern.includes('\\.')) {
         const extension = excludePattern.replace(/\\\./g, '.');
-        console.log('🔧 Excluding files with extension:', extension);
         
         // 创建一个匹配所有文件但排除特定扩展名的规则
         const ruleId = this.ruleIdCounter++;
@@ -403,7 +381,6 @@ export class NetworkService {
         
         const redirect = this.convertToRedirect(basePattern, rule.target);
         if (!redirect) {
-          console.warn('⚠️ Failed to create redirect for modified pattern:', basePattern);
           return [];
         }
         
@@ -430,14 +407,11 @@ export class NetworkService {
           const regexFilter = this.convertToRegexFilter(basePattern);
           if (regexFilter) {
             condition.regexFilter = regexFilter;
-            console.log('📋 Using regexFilter for negative lookbehind:', condition.regexFilter);
           } else {
             condition.urlFilter = this.convertToUrlFilter(basePattern);
-            console.log('📋 Using urlFilter for negative lookbehind:', condition.urlFilter);
           }
         } else {
           condition.urlFilter = this.convertToUrlFilter(basePattern);
-          console.log('📋 Using urlFilter for negative lookbehind:', condition.urlFilter);
         }
         
         // 添加排除条件
@@ -447,7 +421,6 @@ export class NetworkService {
         
         // 由于Chrome API限制，我们需要创建一个更复杂的匹配逻辑
         // 这里我们简化处理：创建一个覆盖大部分情况但不包含.json的规则
-        console.log('⚠️ Note: Negative lookbehind for file extensions has limitations in Chrome declarativeNetRequest');
         
         rules.push({
           id: ruleId,
@@ -459,7 +432,6 @@ export class NetworkService {
           condition,
         });
         
-        console.log('✅ Created negative lookbehind rule with ID:', ruleId);
       }
       
       return rules;
@@ -472,7 +444,6 @@ export class NetworkService {
 
   private convertToUrlFilter(source: string): string | undefined {
     try {
-      console.log('🔧 Converting URL filter for source:', source);
 
       // 处理正则表达式形式: (.*)/path/(.*)
       if (source.includes('(') && source.includes('.*')) {
@@ -480,7 +451,6 @@ export class NetworkService {
         const domainMatch = source.match(/https?:\/\/([^\/\(\)]+)/);
         if (domainMatch) {
           const domain = domainMatch[1];
-          console.log('📋 Extracted domain from regex:', domain);
           return `*://${domain}/*`;
         }
         
@@ -494,13 +464,11 @@ export class NetworkService {
           
         if (simplified.includes('://')) {
           simplified = simplified.replace(/^https?/, '*');
-          console.log('📋 Simplified regex to:', simplified);
           return simplified;
         }
         
         // 作为路径模式处理
         const pathPattern = `*://*/*${simplified.replace(/[^\w\-\.\/]/g, '')}*`;
-        console.log('📋 Created path pattern:', pathPattern);
         return pathPattern;
       }
 
@@ -513,27 +481,23 @@ export class NetworkService {
         } else if (!urlFilter.endsWith('/') && !this.isFileExtension(urlFilter)) {
           urlFilter += '*';
         }
-        console.log('📋 Full URL filter:', urlFilter);
         return urlFilter;
       }
 
       // 处理域名: example.com
       if (source.includes('.') && !source.includes('/')) {
         const domainFilter = `*://${source}/*`;
-        console.log('📋 Domain filter:', domainFilter);
         return domainFilter;
       }
 
       // 处理路径模式: /api/test
       if (source.startsWith('/')) {
         const pathFilter = `*://*/*${source}*`;
-        console.log('📋 Path filter:', pathFilter);
         return pathFilter;
       }
 
       // 默认作为子字符串匹配
       const defaultFilter = `*://*/*${source}*`;
-      console.log('📋 Default filter:', defaultFilter);
       return defaultFilter;
     } catch (error) {
       console.error('❌ Failed to convert URL filter:', source, error);
@@ -541,107 +505,24 @@ export class NetworkService {
     }
   }
 
-  private runRegexSubstitutionTests(): void {
-    console.log('🧪 ========== RegexSubstitution 测试开始 ==========');
-    
-    // 测试用例：模拟用户的实际配置
-    const testCases = [
-      {
-        name: '用户实际案例 - 版本号替换',
-        source: 'https://g.alicdn.com/m2c-fe/1688-print-order/([0-9.]*)/(.*)',
-        target: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/$2',
-        testUrl: 'https://g.alicdn.com/m2c-fe/1688-print-order/4.2.2/umi.js',
-        expectedResult: 'https://g.alicdn.com/m2c-fe/1688-print-order/1.2.0/umi.js'
-      },
-      {
-        name: '基础替换测试',
-        source: 'https://example.com/(.*)/old/(.*)',
-        target: 'https://example.com/$1/new/$2',
-        testUrl: 'https://example.com/api/old/index.js',
-        expectedResult: 'https://example.com/api/new/index.js'
-      },
-      {
-        name: '单捕获组测试',
-        source: 'https://cdn.example.com/v([0-9.]+)/(.*)',
-        target: 'https://cdn.example.com/v2.0.0/$2',
-        testUrl: 'https://cdn.example.com/v1.5.3/main.js',
-        expectedResult: 'https://cdn.example.com/v2.0.0/main.js'
-      }
-    ];
-
-    testCases.forEach((testCase, index) => {
-      console.log(`\n🧪 测试案例 ${index + 1}: ${testCase.name}`);
-      console.log(`   Source Pattern: ${testCase.source}`);
-      console.log(`   Target Pattern: ${testCase.target}`);
-      console.log(`   Test URL: ${testCase.testUrl}`);
-      console.log(`   Expected: ${testCase.expectedResult}`);
-      
-      // 1. 测试 JavaScript 正则替换（用于 webRequest 日志）
-      try {
-        const jsRegex = new RegExp(testCase.source, 'i');
-        const jsResult = testCase.testUrl.replace(jsRegex, testCase.target);
-        console.log(`   ✅ JS Regex Result: ${jsResult}`);
-        
-        if (jsResult === testCase.expectedResult) {
-          console.log(`   ✅ JS 替换正确`);
-        } else {
-          console.log(`   ❌ JS 替换错误`);
-        }
-      } catch (error) {
-        console.log(`   ❌ JS Regex Error: ${error}`);
-      }
-      
-      // 2. 测试 Chrome regexSubstitution 转换
-      const chromeSubstitution = testCase.target.replace(/\$(\d+)/g, '\\\\$1');
-      console.log(`   Chrome regexSubstitution: ${chromeSubstitution}`);
-      
-      // 3. 测试 regexFilter 生成
-      const regexFilter = this.convertToRegexFilter(testCase.source);
-      console.log(`   Chrome regexFilter: ${regexFilter}`);
-      
-      // 4. 生成完整的 declarativeNetRequest 规则
-      const rule = {
-        id: 999 + index,
-        priority: 1,
-        action: {
-          type: chrome.declarativeNetRequest.RuleActionType.REDIRECT,
-          redirect: {
-            regexSubstitution: chromeSubstitution
-          }
-        },
-        condition: {
-          regexFilter: regexFilter,
-          resourceTypes: [chrome.declarativeNetRequest.ResourceType.SCRIPT]
-        }
-      };
-      
-      console.log(`   Generated Rule:`, JSON.stringify(rule, null, 4));
-    });
-    
-    console.log('\n🧪 ========== RegexSubstitution 测试结束 ==========\n');
-  }
 
   private convertToRedirect(
     source: string,
     target: string
   ): chrome.declarativeNetRequest.Redirect | undefined {
     try {
-      console.log('🔧 Converting redirect - source:', source, 'target:', target);
 
       // 直接URL重定向: https://example.com/new (仅当source不包含捕获组时)
       if (!source.includes('(') && (target.startsWith('http://') || target.startsWith('https://'))) {
-        console.log('📋 Direct URL redirect:', target);
         return { url: target };
       }
 
       // 处理正则表达式替换: (.*)/old/(.*) -> $1/new/$2 或完整URL替换
       if (source.includes('(')) {
-        console.log('📋 Attempting regex substitution for source:', source);
         
         // 先验证正则表达式是否可以转换为有效的regexFilter
         const testRegexFilter = this.convertToRegexFilter(source);
         if (!testRegexFilter) {
-          console.warn('⚠️ Cannot convert source to valid regexFilter, using simple URL redirect');
           return { url: target };
         }
         
@@ -668,67 +549,38 @@ export class NetworkService {
             } else {
               // 有捕获组但target是固定URL，需要智能匹配
               // 对于版本号替换这种常见场景，直接使用目标URL
-              console.log(`⚠️ Source has ${captureGroups} capture group(s) but target is fixed URL, using direct substitution`);
               substitution = target;
             }
           }
           
-          console.log('🔧 [DEBUG] ========== Redirect 转换详情 ==========');
-          console.log('📋 Source pattern:', source);
-          console.log('📋 Original target:', target);
-          console.log('📋 Converted substitution:', substitution);
-          
-          // 验证转换结果
-          if (target.includes('$')) {
-            console.log('🔧 [DEBUG] 捕获组转换:');
-            const matches = target.match(/\$(\d+)/g) || [];
-            matches.forEach(match => {
-              const converted = match.replace(/\$(\d+)/, '\\\\$1');
-              console.log(`   ${match} -> ${converted}`);
-            });
-          }
-          
-          // 测试对用户实际案例的处理
-          if (source.includes('1688-print-order')) {
-            console.log('🔧 [DEBUG] 用户案例测试:');
-            console.log(`   用户的target: ${target}`);
-            console.log(`   Chrome格式: ${substitution}`);
-            console.log(`   应该将 $2 转换为 \\\\2`);
-          }
-          console.log('🔧 [DEBUG] ========== 转换详情结束 ==========');
           
           return {
             regexSubstitution: substitution,
           };
         } catch (error) {
-          console.log('⚠️ Regex substitution failed:', error);
         }
       }
 
       // 相对路径重定向: /api/new -> http://localhost:3000/api/new  
       if (target.startsWith('/')) {
         const redirectUrl = `http://localhost:3000${target}`;
-        console.log('📋 Relative path redirect:', redirectUrl);
         return { url: redirectUrl };
       }
 
       // 域名重定向: example.com -> http://example.com
       if (!target.includes('://') && target.includes('.') && !target.includes('/')) {
         const redirectUrl = `http://${target}`;
-        console.log('📋 Domain redirect:', redirectUrl);
         return { url: redirectUrl };
       }
 
       // 处理包含协议的目标
       if (target.includes('://')) {
-        console.log('📋 Protocol-included redirect:', target);
         return { url: target };
       }
 
       // 默认处理：假设是完整URL或添加http前缀
       const fallbackUrl = target.startsWith('//') ? `http:${target}` : 
                          target.includes('://') ? target : `http://${target}`;
-      console.log('📋 Fallback redirect:', fallbackUrl);
       return { url: fallbackUrl };
     } catch (error) {
       console.error(
@@ -768,30 +620,17 @@ export class NetworkService {
     rules: chrome.declarativeNetRequest.Rule[]
   ): Promise<void> {
     try {
-      console.log('🔄 Applying declarative rules...');
-      console.log('Rules to apply:', JSON.stringify(rules, null, 2));
-      
-      // 专门检查 regexSubstitution 规则
-      rules.forEach(rule => {
-        if (rule.action.redirect?.regexSubstitution) {
-          console.log(`🔍 RegexSubstitution rule ${rule.id}:`);
-          console.log(`   regexFilter: ${rule.condition.regexFilter}`);
-          console.log(`   regexSubstitution: ${rule.action.redirect.regexSubstitution}`);
-        }
-      });
 
       const existingRules =
         await chrome.declarativeNetRequest.getDynamicRules();
       const ruleIdsToRemove = existingRules.map(rule => rule.id);
 
-      console.log('Removing existing rules:', ruleIdsToRemove);
 
       await chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: ruleIdsToRemove,
         addRules: rules,
       });
 
-      console.log(`✅ Successfully applied ${rules.length} declarative rules`);
 
       // 显示规则转换过程中的错误信息
       if (this.ruleErrors.length > 0) {
@@ -807,8 +646,6 @@ export class NetworkService {
       }
 
       const newRules = await chrome.declarativeNetRequest.getDynamicRules();
-      console.log('Active rules after update:', newRules.length);
-      console.log('Active rules details:', JSON.stringify(newRules, null, 2));
     } catch (error) {
       console.error(
         '❌ Failed to apply declarative rules:',
@@ -862,7 +699,6 @@ export class NetworkService {
               args: [this.ruleErrors]
             });
           } catch (injectError) {
-            console.log('Could not inject error info to tab:', tab.url, injectError);
           }
         }
       }
@@ -882,7 +718,6 @@ export class NetworkService {
         addRules: [],
       });
 
-      console.log('Cleared all rules');
     } catch (error) {
       console.error('Failed to clear rules:', error);
     }
@@ -891,15 +726,12 @@ export class NetworkService {
   setupNetworkLogging(globalEnabled: boolean, groups: GroupRuleVo[]): void {
     if (typeof chrome === 'undefined' || !chrome.webRequest) return;
 
-    console.log(`🔧 [DEBUG] Setting up network logging - globalEnabled: ${globalEnabled}, groups: ${groups.length}`);
 
     // 移除旧的监听器
     if (this.beforeRequestListener) {
-      console.log('🗑️ [DEBUG] Removing old beforeRequest listener');
       chrome.webRequest.onBeforeRequest.removeListener(this.beforeRequestListener);
     }
     if (this.completedListener) {
-      console.log('🗑️ [DEBUG] Removing old completed listener');
       chrome.webRequest.onCompleted.removeListener(this.completedListener);
     }
 
@@ -909,7 +741,6 @@ export class NetworkService {
 
     // 创建新的监听器
     this.beforeRequestListener = (details: any) => {
-      console.log(`🎯 [DEBUG] webRequest triggered for: ${details.url}`);
       this.logProxyHit(details, this.currentGlobalEnabled, this.currentGroups);
       return undefined;
     };
@@ -919,20 +750,17 @@ export class NetworkService {
     };
 
     // 添加新的监听器
-    console.log('➕ [DEBUG] Adding new beforeRequest listener');
     chrome.webRequest.onBeforeRequest.addListener(
       this.beforeRequestListener,
       { urls: ['<all_urls>'] },
       ['requestBody']
     );
 
-    console.log('➕ [DEBUG] Adding new completed listener');
     chrome.webRequest.onCompleted.addListener(
       this.completedListener,
       { urls: ['<all_urls>'] }
     );
     
-    console.log('✅ [DEBUG] Network logging setup completed');
   }
 
   private logProxyHit(
@@ -941,17 +769,14 @@ export class NetworkService {
     groups: GroupRuleVo[]
   ): void {
     if (!globalEnabled) {
-      console.log(`🔍 [XSwitch V3] Skip - Global disabled: ${details.url}`);
       return;
     }
 
     const enabledGroups = groups.filter(group => group.enabled);
     if (enabledGroups.length === 0) {
-      console.log(`🔍 [XSwitch V3] Skip - No enabled groups: ${details.url}`);
       return;
     }
 
-    console.log(`🔍 [XSwitch V3] Checking: ${details.url} (${details.type})`);
 
     let hasMatch = false;
     enabledGroups.forEach(group => {
@@ -964,9 +789,6 @@ export class NetworkService {
 
         proxyRules.forEach((rule, index) => {
           if (!rule.enabled) {
-            console.log(
-              `  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - DISABLED`
-            );
             return;
           }
 
@@ -979,17 +801,6 @@ export class NetworkService {
               rule.target
             );
 
-            console.group(`✅ [XSwitch V3] MATCH - Rule ${index + 1}`);
-            console.log(`📥 Original: ${details.url}`);
-            console.log(`📤 Target: ${targetUrl}`);
-            console.log(`📋 Rule: ${rule.name || 'Unnamed'}`);
-            console.log(`🎯 Pattern: ${rule.source}`);
-            console.log(`⏰ Time: ${new Date().toLocaleString()}`);
-            console.log(`📊 Type: ${details.type}`);
-            if (details.tabId && details.tabId !== -1) {
-              console.log(`🖼️ Tab: ${details.tabId}`);
-            }
-            console.groupEnd();
 
             if (details.tabId && details.tabId !== -1) {
               chrome.tabs
@@ -1009,9 +820,6 @@ export class NetworkService {
                 });
             }
           } else {
-            console.log(
-              `  ❌ Rule ${index + 1} (${rule.name || 'Unnamed'}) - NO MATCH: ${rule.source}`
-            );
           }
         });
       } catch (error) {
@@ -1027,7 +835,6 @@ export class NetworkService {
     });
 
     if (!hasMatch) {
-      console.log(`  ➡️ [XSwitch V3] No matching rules for: ${details.url}`);
     }
   }
 
@@ -1082,7 +889,6 @@ export class NetworkService {
 
   private isUrlMatched(url: string, pattern: string): boolean {
     try {
-      console.log(`🔍 Matching URL: "${url}" against pattern: "${pattern}"`);
       
       // 检查是否为正则表达式模式
       const isRegexPattern =
@@ -1098,11 +904,9 @@ export class NetworkService {
 
       if (isRegexPattern) {
         // 正则表达式匹配
-        console.log(`🔧 Using regex matching for pattern: ${pattern}`);
         try {
           const regex = new RegExp(pattern, 'i');
           const result = regex.test(url);
-          console.log(`📋 Regex result: ${result}`);
           return result;
         } catch (error) {
           console.error(
@@ -1117,9 +921,7 @@ export class NetworkService {
         }
       } else {
         // 字符串匹配
-        console.log(`🔧 Using string matching for pattern: ${pattern}`);
         const result = url.indexOf(pattern) > -1;
-        console.log(`📋 String match result: ${result}`);
         return result;
       }
     } catch (error) {
@@ -1143,7 +945,6 @@ export class NetworkService {
     target: string
   ): string {
     try {
-      console.log(`🔧 getTargetUrl: "${originalUrl}" -> pattern: "${sourcePattern}" -> target: "${target}"`);
       
       // 检查是否为正则表达式模式
       const isRegexPattern =
@@ -1160,11 +961,8 @@ export class NetworkService {
       if (isRegexPattern) {
         try {
           const regex = new RegExp(sourcePattern, 'i');
-          console.log(`🔧 Using regex: ${regex}`);
-          
           // JavaScript 正则替换语法：$1, $2, ... 对应捕获组
           const result = originalUrl.replace(regex, target);
-          console.log(`📋 Regex replacement result: "${result}"`);
           return result;
         } catch (error) {
           console.error('❌ Error applying regex replacement:', error);
@@ -1172,9 +970,7 @@ export class NetworkService {
         }
       } else {
         // 字符串替换
-        console.log(`🔧 Using string replacement`);
         const result = originalUrl.split(sourcePattern).join(target);
-        console.log(`📋 String replacement result: "${result}"`);
         return result;
       }
     } catch (error) {
