@@ -123,7 +123,7 @@ export class NetworkService {
           });
 
           // 判断是否需要使用正则表达式
-          const isRegexPattern = rule.source.includes('(') && rule.target.includes('$');
+          const isRegexPattern = rule.source.includes('(') && redirect.regexSubstitution;
           
           let condition: any = {
             resourceTypes: [
