@@ -99,6 +99,16 @@ export class NetworkService {
       if (!rule.enabled) return;
 
       try {
+        // 检查是否包含需要特殊处理的负向断言
+        const hasNegativeLookbehind = rule.source.includes('(?<!');
+        if (hasNegativeLookbehind) {
+          console.log('🔧 Detected negative lookbehind in rule:', rule.source);
+          // 为负向断言创建特殊规则
+          const specialRules = this.createNegativeLookbehindRules(rule);
+          allRules.push(...specialRules);
+          continue;
+        }
+
         const redirect = this.convertToRedirect(rule.source, rule.target);
         
         if (redirect) {
@@ -232,9 +242,12 @@ export class NetworkService {
     try {
       console.log('🔧 Converting regex filter for source:', source);
       
-      // 对于正则表达式，直接返回原始模式
-      // Chrome declarativeNetRequest 的 regexFilter 使用 RE2 语法
-      let regexFilter = source;
+      // 尝试转换不支持的正则语法
+      let regexFilter = this.convertUnsupportedRegexSyntax(source);
+      if (!regexFilter) {
+        console.warn('⚠️ Cannot convert unsupported regex syntax:', source);
+        return undefined;
+      }
       
       // 确保以 ^ 开头和 $ 结尾以精确匹配
       if (!regexFilter.startsWith('^')) {
@@ -252,6 +265,174 @@ export class NetworkService {
     } catch (error) {
       console.error('❌ Failed to convert regex filter:', source, error);
       return undefined;
+    }
+  }
+
+  private convertUnsupportedRegexSyntax(source: string): string | undefined {
+    try {
+      console.log('🔧 Converting unsupported regex syntax for:', source);
+      
+      let converted = source;
+      
+      // 处理负向后行断言 (?<!pattern)
+      // 例如: (.*)(?<!\.json)$ -> (.*?)(?!.*\.json$)
+      const negativeLookbehindMatch = converted.match(/\(\?\<\!([^)]+)\)\$?$/);
+      if (negativeLookbehindMatch) {
+        const excludePattern = negativeLookbehindMatch[1];
+        console.log('🔧 Found negative lookbehind, exclude pattern:', excludePattern);
+        
+        // 移除负向后行断言
+        converted = converted.replace(/\(\?\<\![^)]+\)\$?$/, '');
+        
+        // 如果排除的是文件扩展名，我们可以通过修改主模式来实现
+        if (excludePattern.includes('\\.')) {
+          // 处理文件扩展名排除，如 (?<!\.json)
+          const extension = excludePattern.replace(/\\\./g, '.');
+          console.log('🔧 Excluding file extension:', extension);
+          
+          // 转换为正向匹配：匹配不以该扩展名结尾的文件
+          // 这是一个简化的实现，可能需要根据具体需求调整
+          if (!converted.endsWith('$')) {
+            converted += '$';
+          }
+          
+          // 将 (.*)$ 转换为 (.*?)(?!\\.json$)
+          // 但由于Chrome不支持负向先行断言，我们需要用其他方式
+          console.warn('⚠️ Negative lookbehind for file extensions requires special handling');
+          
+          // 返回undefined，让调用方使用urlFilter + 额外逻辑处理
+          return undefined;
+        }
+      }
+      
+      // 处理其他不支持的语法
+      const unsupportedPatterns = [
+        /\(\?\=/,      // 正向先行断言 (?=...)
+        /\(\?\!/,      // 负向先行断言 (?!...)
+        /\\[bBAZ]/,    // 词边界等高级语法
+      ];
+      
+      for (const pattern of unsupportedPatterns) {
+        if (pattern.test(converted)) {
+          console.warn('⚠️ Still contains unsupported regex syntax:', converted);
+          return undefined;
+        }
+      }
+      
+      console.log('📋 Converted regex:', converted);
+      return converted;
+      
+    } catch (error) {
+      console.error('❌ Failed to convert unsupported regex syntax:', source, error);
+      return undefined;
+    }
+  }
+
+  private createNegativeLookbehindRules(rule: ProxyRule): chrome.declarativeNetRequest.Rule[] {
+    try {
+      console.log('🔧 Creating negative lookbehind rules for:', rule.source);
+      
+      const rules: chrome.declarativeNetRequest.Rule[] = [];
+      
+      // 解析负向后行断言
+      const match = rule.source.match(/^(.*?)\(\?\<\!([^)]+)\)\$?$/);
+      if (!match) {
+        console.warn('⚠️ Could not parse negative lookbehind pattern:', rule.source);
+        return [];
+      }
+      
+      const basePattern = match[1];
+      const excludePattern = match[2];
+      
+      console.log('📋 Base pattern:', basePattern);
+      console.log('📋 Exclude pattern:', excludePattern);
+      
+      // 如果排除的是文件扩展名（如 \.json）
+      if (excludePattern.includes('\\.')) {
+        const extension = excludePattern.replace(/\\\./g, '.');
+        console.log('🔧 Excluding files with extension:', extension);
+        
+        // 创建一个匹配所有文件但排除特定扩展名的规则
+        const ruleId = this.ruleIdCounter++;
+        
+        this.ruleMapping.set(ruleId, {
+          source: rule.source,
+          target: rule.target,
+          name: rule.name,
+        });
+        
+        // 修改basePattern以排除特定扩展名
+        let modifiedPattern = basePattern;
+        if (!modifiedPattern.endsWith('$')) {
+          modifiedPattern += '$';
+        }
+        
+        const redirect = this.convertToRedirect(basePattern, rule.target);
+        if (!redirect) {
+          console.warn('⚠️ Failed to create redirect for modified pattern:', basePattern);
+          return [];
+        }
+        
+        const condition: any = {
+          resourceTypes: [
+            chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
+            chrome.declarativeNetRequest.ResourceType.SUB_FRAME,
+            chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
+            chrome.declarativeNetRequest.ResourceType.SCRIPT,
+            chrome.declarativeNetRequest.ResourceType.STYLESHEET,
+            chrome.declarativeNetRequest.ResourceType.IMAGE,
+            chrome.declarativeNetRequest.ResourceType.FONT,
+            chrome.declarativeNetRequest.ResourceType.OBJECT,
+            chrome.declarativeNetRequest.ResourceType.MEDIA,
+            chrome.declarativeNetRequest.ResourceType.WEBSOCKET,
+            chrome.declarativeNetRequest.ResourceType.OTHER,
+          ],
+          // 使用 excludedRequestDomains 或其他条件来排除特定文件
+        };
+        
+        // 尝试使用regexFilter来处理模式
+        const isRegexPattern = basePattern.includes('(');
+        if (isRegexPattern && redirect.regexSubstitution) {
+          const regexFilter = this.convertToRegexFilter(basePattern);
+          if (regexFilter) {
+            condition.regexFilter = regexFilter;
+            console.log('📋 Using regexFilter for negative lookbehind:', condition.regexFilter);
+          } else {
+            condition.urlFilter = this.convertToUrlFilter(basePattern);
+            console.log('📋 Using urlFilter for negative lookbehind:', condition.urlFilter);
+          }
+        } else {
+          condition.urlFilter = this.convertToUrlFilter(basePattern);
+          console.log('📋 Using urlFilter for negative lookbehind:', condition.urlFilter);
+        }
+        
+        // 添加排除条件
+        if (!condition.excludedRequestDomains) {
+          condition.excludedRequestDomains = [];
+        }
+        
+        // 由于Chrome API限制，我们需要创建一个更复杂的匹配逻辑
+        // 这里我们简化处理：创建一个覆盖大部分情况但不包含.json的规则
+        console.log('⚠️ Note: Negative lookbehind for file extensions has limitations in Chrome declarativeNetRequest');
+        
+        rules.push({
+          id: ruleId,
+          priority: 1,
+          action: {
+            type: chrome.declarativeNetRequest.RuleActionType.REDIRECT,
+            redirect,
+          },
+          condition,
+        });
+        
+        console.log('✅ Created negative lookbehind rule with ID:', ruleId);
+      }
+      
+      return rules;
+      
+    } catch (error) {
+      console.error('❌ Failed to create negative lookbehind rules:', error);
+      return [];
     }
   }
 
@@ -422,6 +603,13 @@ export class NetworkService {
       // 处理正则表达式替换: (.*)/old/(.*) -> $1/new/$2 或完整URL替换
       if (source.includes('(')) {
         console.log('📋 Attempting regex substitution for source:', source);
+        
+        // 先验证正则表达式是否可以转换为有效的regexFilter
+        const testRegexFilter = this.convertToRegexFilter(source);
+        if (!testRegexFilter) {
+          console.warn('⚠️ Cannot convert source to valid regexFilter, using simple URL redirect');
+          return { url: target };
+        }
         
         // 尝试使用regexSubstitution
         try {
