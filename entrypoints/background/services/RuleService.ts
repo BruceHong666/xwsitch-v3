@@ -1,6 +1,7 @@
 import { GroupRuleVo } from '../../../types';
 import { DEFAULT_NEW_RULE, DEFAULT_RULE } from '../../utils/const';
 import { StorageDao } from '../dao/StorageDao';
+import { networkService } from '../../utils/network';
 
 /**
  * 规则服务 - 负责规则组的业务逻辑处理
@@ -72,6 +73,7 @@ export class RuleService {
       // 验证单个规则组数据
       this.validateGroup(group);
       await this.storageDao.saveGroup(group);
+      await this.updateNetworkRules(); // 保存后刷新网络规则
       console.log('✅ RuleService.saveGroup success');
     } catch (error) {
       console.error(
@@ -172,6 +174,7 @@ export class RuleService {
       };
 
       await this.saveGroup(updatedGroup);
+      await this.updateNetworkRules(); // 更新后刷新网络规则
       console.log('✅ RuleService.updateGroup success');
     } catch (error) {
       console.error(
@@ -202,6 +205,7 @@ export class RuleService {
       }
 
       await this.saveGroups(filteredGroups);
+      await this.updateNetworkRules(); // 删除后更新网络规则
       console.log('✅ RuleService.deleteGroup success');
     } catch (error) {
       console.error(
@@ -231,6 +235,7 @@ export class RuleService {
 
       const newEnabled = !group.enabled;
       await this.updateGroup(groupId, { enabled: newEnabled });
+      await this.updateNetworkRules(); // 切换状态后更新网络规则
 
       console.log('✅ RuleService.toggleGroup success:', newEnabled);
       return newEnabled;
@@ -271,12 +276,28 @@ export class RuleService {
   }
 
   /**
+   * 更新网络规则
+   */
+  private async updateNetworkRules(): Promise<void> {
+    try {
+      const groups = await this.loadGroups();
+      const globalEnabled = await this.storageDao.loadGlobalEnabled();
+      await networkService.updateRules(groups, globalEnabled);
+      console.log('✅ Network rules updated successfully');
+    } catch (error) {
+      console.error('❌ Failed to update network rules:', error);
+      // 不抛出错误，因为这是后台更新，不应该影响主要操作
+    }
+  }
+
+  /**
    * 清除所有数据
    */
   async clearAllData(): Promise<void> {
     console.log('🔄 RuleService.clearAllData');
     try {
       await this.storageDao.clearAll();
+      await this.updateNetworkRules(); // 清除数据后更新网络规则
       console.log('✅ RuleService.clearAllData success');
     } catch (error) {
       console.error(
