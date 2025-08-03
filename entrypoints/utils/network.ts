@@ -108,10 +108,10 @@ export class NetworkService {
           // 为负向断言创建特殊规则
           const specialRules = this.createNegativeLookbehindRules(rule);
           allRules.push(...specialRules);
-          continue;
+          return; // 在forEach中使用return而不是continue
         }
 
-        const redirect = this.convertToRedirect(rule.source, rule.target);
+        let redirect = this.convertToRedirect(rule.source, rule.target);
         
         if (redirect) {
           const ruleId = this.ruleIdCounter++;
