@@ -36,6 +36,7 @@ export class NetworkService {
     number,
     { source: string; target: string; name?: string }
   >();
+  private ruleErrors: Array<{ rule: any; error: string; type: 'proxy' | 'cors' }> = [];
   private beforeRequestListener: ((details: any) => any) | null = null;
   private completedListener: ((details: any) => void) | null = null;
   private currentGlobalEnabled: boolean = false;
@@ -62,6 +63,7 @@ export class NetworkService {
 
     const allRules: chrome.declarativeNetRequest.Rule[] = [];
     this.ruleMapping.clear();
+    this.ruleErrors = []; // 清空之前的错误
 
     for (const group of enabledGroups) {
       const validation = validateJsonFormat(group.ruleText);
@@ -167,16 +169,32 @@ export class NetworkService {
             },
             condition,
           });
+        } else {
+          // 如果redirect转换失败，记录错误但继续处理其他规则
+          const errorMsg = `Failed to convert redirect for rule: ${rule.source} -> ${rule.target}`;
+          console.warn('⚠️', errorMsg);
+          this.ruleErrors.push({
+            rule: rule,
+            error: errorMsg,
+            type: 'proxy'
+          });
         }
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
         console.error(
           'Failed to generate proxy rule:',
           'Rule:',
           rule,
           'Error:',
-          error instanceof Error ? error.message : String(error),
+          errorMsg,
           'Code: PROXY_RULE_ERROR'
         );
+        // 收集错误信息但继续处理其他规则
+        this.ruleErrors.push({
+          rule: rule,
+          error: `Proxy rule generation failed: ${errorMsg}`,
+          type: 'proxy'
+        });
       }
     });
 
@@ -229,9 +247,25 @@ export class NetworkService {
               ],
             },
           });
+        } else {
+          // 如果urlFilter转换失败，记录错误但继续处理其他规则
+          const errorMsg = `Failed to convert URL filter for CORS rule: ${rule.source}`;
+          console.warn('⚠️', errorMsg);
+          this.ruleErrors.push({
+            rule: rule,
+            error: errorMsg,
+            type: 'cors'
+          });
         }
       } catch (error) {
-        console.error('Failed to generate CORS rule:', rule, error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error('Failed to generate CORS rule:', rule, errorMsg);
+        // 收集错误信息但继续处理其他规则
+        this.ruleErrors.push({
+          rule: rule,
+          error: `CORS rule generation failed: ${errorMsg}`,
+          type: 'cors'
+        });
       }
     });
 
@@ -759,6 +793,19 @@ export class NetworkService {
 
       console.log(`✅ Successfully applied ${rules.length} declarative rules`);
 
+      // 显示规则转换过程中的错误信息
+      if (this.ruleErrors.length > 0) {
+        console.group('⚠️ Rule Conversion Errors');
+        this.ruleErrors.forEach((error, index) => {
+          console.error(`Error ${index + 1} (${error.type}):`, error.error);
+          console.log('Failed rule:', error.rule);
+        });
+        console.groupEnd();
+        
+        // 发送错误信息到前端页面
+        this.injectErrorsToActiveTabs();
+      }
+
       const newRules = await chrome.declarativeNetRequest.getDynamicRules();
       console.log('Active rules after update:', newRules.length);
       console.log('Active rules details:', JSON.stringify(newRules, null, 2));
@@ -774,6 +821,53 @@ export class NetworkService {
       if (error instanceof Error) {
         console.error('Error details:', error.message);
       }
+    }
+  }
+
+  private async injectErrorsToActiveTabs(): Promise<void> {
+    try {
+      // 获取所有活动的标签页
+      const tabs = await chrome.tabs.query({ active: true });
+      
+      if (tabs.length === 0) return;
+      
+      // 注入到每个活动标签页
+      for (const tab of tabs) {
+        if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('moz-extension://')) {
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (errors) => {
+                if ((window as any).xswitchErrorsShown) return; // 避免重复显示
+                (window as any).xswitchErrorsShown = true;
+                
+                console.group('%c🔧 XSwitch Rules Conversion Errors', 'color: #ff6b35; font-size: 14px; font-weight: bold;');
+                console.warn('Some proxy/CORS rules failed to convert and were skipped:');
+                
+                errors.forEach((error: any, index: number) => {
+                  console.group(`%cError ${index + 1} (${error.type} rule)`, 'color: #ff6b35;');
+                  console.error('Error:', error.error);
+                  console.log('Failed rule:', error.rule);
+                  console.groupEnd();
+                });
+                
+                console.log('%cNote: Other rules are still working normally.', 'color: #4caf50;');
+                console.groupEnd();
+                
+                // 清理标记，下次更新规则时可以再次显示
+                setTimeout(() => {
+                  (window as any).xswitchErrorsShown = false;
+                }, 30000); // 30秒后允许再次显示
+              },
+              args: [this.ruleErrors]
+            });
+          } catch (injectError) {
+            console.log('Could not inject error info to tab:', tab.url, injectError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to inject errors to tabs:', error);
     }
   }
 
